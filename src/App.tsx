@@ -18,6 +18,7 @@ import ProfileSwitcher from './components/profiles/ProfileSwitcher';
 import { exportToHtml } from './utils/exporter';
 import { generateAiContent } from './utils/ai';
 import { supabase } from './supabase';
+
 interface ClientProfile {
   id: string;
   businessName: string;
@@ -28,8 +29,6 @@ interface ClientProfile {
 }
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing' | 'portal' | 'emails'>('builder');
   const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
@@ -50,14 +49,7 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setCheckingAuth(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+    // Supabase Auth checks have been completely removed to bypass the network lock.
 
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('success') === 'true') {
@@ -69,8 +61,6 @@ export default function App() {
       setCurrentView('billing');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleSelectProfile = (profile: ClientProfile) => {
@@ -102,14 +92,6 @@ export default function App() {
     setBusinessName(newHeadline);
     setIsGenerating(false);
   };
-
-  if (checkingAuth) {
-    return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading SiteForge Session...</div>;
-  }
-
-  if (!session) {
-    return <AuthView onLoginSuccess={() => {}} />;
-  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans relative">
@@ -204,7 +186,7 @@ export default function App() {
         </div>
         <div className="mt-auto px-3 w-full">
           <button 
-            onClick={() => supabase.auth.signOut()}
+            onClick={() => alert("Authentication is currently bypassed for development. Sign out is disabled.")}
             className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold text-xs transition border border-red-500/20"
             title="Sign Out"
           >
