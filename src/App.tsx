@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import PlumbingTemplate from './components/themes/Plumbing';
 import RoofingTemplate from './components/themes/Roofing';
+import ElectricianTemplate from './components/themes/Electrician';
+import HvacTemplate from './components/themes/Hvac';
+import BpoTemplate from './components/themes/Bpo';
 import LeadsView from './components/dashboard/LeadsView';
 import DomainsView from './components/dashboard/DomainsView';
 import SubscriptionsView from './components/dashboard/SubscriptionsView';
@@ -32,7 +35,9 @@ export default function App() {
   
   const [profiles, setProfiles] = useState<ClientProfile[]>([
     { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' },
-    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing' }
+    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing' },
+    { id: '3', businessName: 'Apex Electrical Group', phone: '+61 3 9999 5555', suburb: 'South Yarra VIC', theme: 'electrician' },
+    { id: '4', businessName: 'JRB Tele Services BPO', phone: '+91 9766 724740', suburb: 'Mumbai', theme: 'bpo' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
 
@@ -80,7 +85,7 @@ export default function App() {
     const newId = String(profiles.length + 1);
     const newProfile: ClientProfile = {
       id: newId,
-      businessName: `New Trade Client ${newId}`,
+      businessName: `New Client ${newId}`,
       phone: '+61 400 000 000',
       suburb: 'Melbourne VIC',
       theme: 'plumbing'
@@ -91,8 +96,7 @@ export default function App() {
 
   const handleAiCopy = async () => {
     setIsGenerating(true);
-    const tradeType = selectedTheme === 'plumbing' ? 'Plumbing' : 'Roofing';
-    const newHeadline = await generateAiContent(tradeType, suburb, 'headline');
+    const newHeadline = await generateAiContent(selectedTheme, suburb, 'headline');
     setBusinessName(newHeadline);
     setIsGenerating(false);
   };
@@ -269,7 +273,7 @@ export default function App() {
           <div className="w-[380px] border-r border-slate-800 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto">
             <div>
               <h1 className="text-xl font-black tracking-tight text-white">SITEFORGE <span className="text-blue-500">ENGINE</span></h1>
-              <p className="text-xs text-slate-400 mt-1">Local trade template generator</p>
+              <p className="text-xs text-slate-400 mt-1">Multi-tenant trade template generator</p>
             </div>
 
             <ProfileSwitcher 
@@ -289,6 +293,9 @@ export default function App() {
                 >
                   <option value="plumbing">Plumbing & Emergency</option>
                   <option value="roofing">Roofing & Restorations</option>
+                  <option value="electrician">Electrical Contracting</option>
+                  <option value="hvac">HVAC & Climate Control</option>
+                  <option value="bpo">BPO & Call Center Services</option>
                 </select>
               </div>
 
@@ -348,6 +355,15 @@ export default function App() {
             )}
             {selectedTheme === 'roofing' && (
               <RoofingTemplate businessName={businessName} phone={phone} suburb={suburb} />
+            )}
+            {selectedTheme === 'electrician' && (
+              <ElectricianTemplate businessName={businessName} phone={phone} suburb={suburb} />
+            )}
+            {selectedTheme === 'hvac' && (
+              <HvacTemplate businessName={businessName} phone={phone} suburb={suburb} />
+            )}
+            {selectedTheme === 'bpo' && (
+              <BpoTemplate businessName={businessName} phone={phone} suburb={suburb} />
             )}
           </div>
         </div>
