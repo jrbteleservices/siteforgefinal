@@ -1,0 +1,303 @@
+import { useState, useEffect } from 'react';
+import PlumbingTemplate from './components/themes/Plumbing';
+import RoofingTemplate from './components/themes/Roofing';
+import LeadsView from './components/dashboard/LeadsView';
+import DomainsView from './components/dashboard/DomainsView';
+import SubscriptionsView from './components/dashboard/SubscriptionsView';
+import AnalyticsView from './components/dashboard/AnalyticsView';
+import SupportView from './components/dashboard/SupportView';
+import WebhooksView from './components/dashboard/WebhooksView';
+import RoutingView from './components/common/RoutingView';
+import AuthView from './components/auth/AuthView';
+import ProfileSwitcher from './components/profiles/ProfileSwitcher';
+import { exportToHtml } from './utils/exporter';
+import { generateAiContent } from './utils/ai';
+import { supabase } from './lib/supabase';
+
+interface ClientProfile {
+  id: string;
+  businessName: string;
+  phone: string;
+  suburb: string;
+  theme: string;
+}
+
+export default function App() {
+  const [session, setSession] = useState<any>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing'>('builder');
+  
+  const [profiles, setProfiles] = useState<ClientProfile[]>([
+    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' },
+    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing' }
+  ]);
+  const [activeProfileId, setActiveProfileId] = useState('1');
+
+  const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
+  const [businessName, setBusinessName] = useState(activeProfile.businessName);
+  const [phone, setPhone] = useState(activeProfile.phone);
+  const [suburb, setSuburb] = useState(activeProfile.suburb);
+  const [selectedTheme, setSelectedTheme] = useState(activeProfile.theme);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCheckingAuth(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSelectProfile = (profile: ClientProfile) => {
+    setActiveProfileId(profile.id);
+    setBusinessName(profile.businessName);
+    setPhone(profile.phone);
+    setSuburb(profile.suburb);
+    setSelectedTheme(profile.theme);
+  };
+
+  const handleAddNewProfile = () => {
+    const newId = String(profiles.length + 1);
+    const newProfile: ClientProfile = {
+      id: newId,
+      businessName: `New Trade Client ${newId}`,
+      phone: '+61 400 000 000',
+      suburb: 'Melbourne VIC',
+      theme: 'plumbing'
+    };
+    setProfiles([...profiles, newProfile]);
+    handleSelectProfile(newProfile);
+  };
+
+  const handleAiCopy = async () => {
+    setIsGenerating(true);
+    const tradeType = selectedTheme === 'plumbing' ? 'Plumbing' : 'Roofing';
+    const newHeadline = await generateAiContent(tradeType, suburb, 'headline');
+    setBusinessName(newHeadline);
+    setIsGenerating(false);
+  };
+
+  if (checkingAuth) {
+    return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading SiteForge Session...</div>;
+  }
+
+  if (!session) {
+    return <AuthView onLoginSuccess={() => {}} />;
+  }
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans">
+      {/* GLOBAL NAVIGATION SIDEBAR */}
+      <div className="w-20 border-r border-slate-800 bg-slate-950 flex flex-col items-center py-6 gap-6">
+        <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-600/30">
+          SF
+        </div>
+        <div className="flex flex-col gap-3 w-full px-3">
+          <button 
+            onClick={() => setCurrentView('builder')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'builder' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Website Builder"
+          >
+            Builder
+          </button>
+          <button 
+            onClick={() => setCurrentView('dashboard')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Leads Dashboard"
+          >
+            Leads
+          </button>
+          <button 
+            onClick={() => setCurrentView('routing')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'routing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Lead Routing Rules"
+          >
+            Route
+          </button>
+          <button 
+            onClick={() => setCurrentView('domains')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'domains' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Domains Manager"
+          >
+            Domains
+          </button>
+          <button 
+            onClick={() => setCurrentView('billing')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'billing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Billing & Subscriptions"
+          >
+            Billing
+          </button>
+          <button 
+            onClick={() => setCurrentView('analytics')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Platform Analytics"
+          >
+            Analytics
+          </button>
+          <button 
+            onClick={() => setCurrentView('support')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'support' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Support Ticketing"
+          >
+            Support
+          </button>
+          <button 
+            onClick={() => setCurrentView('webhooks')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'webhooks' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Webhook Endpoints"
+          >
+            Hooks
+          </button>
+        </div>
+        <div className="mt-auto px-3 w-full">
+          <button 
+            onClick={() => supabase.auth.signOut()}
+            className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold text-xs transition border border-red-500/20"
+            title="Sign Out"
+          >
+            Out
+          </button>
+        </div>
+      </div>
+
+      {/* VIEW RENDERER */}
+      {currentView === 'dashboard' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <LeadsView />
+        </div>
+      )}
+
+      {currentView === 'routing' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <RoutingView />
+        </div>
+      )}
+
+      {currentView === 'domains' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <DomainsView />
+        </div>
+      )}
+
+      {currentView === 'billing' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <SubscriptionsView />
+        </div>
+      )}
+
+      {currentView === 'analytics' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <AnalyticsView />
+        </div>
+      )}
+
+      {currentView === 'support' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <SupportView />
+        </div>
+      )}
+
+      {currentView === 'webhooks' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <WebhooksView />
+        </div>
+      )}
+
+      {currentView === 'builder' && (
+        <div className="flex h-full w-full overflow-hidden">
+          {/* LEFT BUILDER CONTROLS */}
+          <div className="w-[380px] border-r border-slate-800 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto">
+            <div>
+              <h1 className="text-xl font-black tracking-tight text-white">SITEFORGE <span className="text-blue-500">ENGINE</span></h1>
+              <p className="text-xs text-slate-400 mt-1">Local trade template generator</p>
+            </div>
+
+            <ProfileSwitcher 
+              profiles={profiles}
+              activeProfileId={activeProfileId}
+              onSelectProfile={handleSelectProfile}
+              onAddNew={handleAddNewProfile}
+            />
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Industry Theme</label>
+                <select 
+                  value={selectedTheme} 
+                  onChange={(e) => setSelectedTheme(e.target.value)}
+                  className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+                >
+                  <option value="plumbing">Plumbing & Emergency</option>
+                  <option value="roofing">Roofing & Restorations</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Business Name</label>
+                <input 
+                  type="text" 
+                  value={businessName} 
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Phone Number</label>
+                <input 
+                  type="text" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Target Suburb / City</label>
+                <input 
+                  type="text" 
+                  value={suburb} 
+                  onChange={(e) => setSuburb(e.target.value)}
+                  className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+                />
+              </div>
+
+              <button 
+                onClick={handleAiCopy}
+                disabled={isGenerating}
+                className="w-full bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/30 text-purple-300 transition py-2.5 rounded-xl font-bold text-xs shadow-lg mt-2"
+              >
+                {isGenerating ? 'Generating AI Copy...' : '✨ Generate AI Business Title'}
+              </button>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-slate-800 flex flex-col gap-3">
+              <button 
+                onClick={() => exportToHtml(businessName, phone, suburb, selectedTheme)}
+                className="w-full bg-blue-600 hover:bg-blue-500 transition py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 text-white"
+              >
+                Export Live Preview Link
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT LIVE PREVIEW PANE */}
+          <div className="flex-1 h-full overflow-y-auto bg-slate-900">
+            {selectedTheme === 'plumbing' && (
+              <PlumbingTemplate businessName={businessName} phone={phone} suburb={suburb} />
+            )}
+            {selectedTheme === 'roofing' && (
+              <RoofingTemplate businessName={businessName} phone={phone} suburb={suburb} />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
