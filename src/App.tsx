@@ -7,6 +7,8 @@ import SubscriptionsView from './components/dashboard/SubscriptionsView';
 import AnalyticsView from './components/dashboard/AnalyticsView';
 import SupportView from './components/dashboard/SupportView';
 import WebhooksView from './components/dashboard/WebhooksView';
+import ClientPortalView from './components/dashboard/ClientPortalView';
+import EmailTemplatesView from './components/dashboard/EmailTemplatesView';
 import RoutingView from './components/common/RoutingView';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
@@ -25,7 +27,8 @@ interface ClientProfile {
 export default function App() {
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing'>('builder');
+  const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing' | 'portal' | 'emails'>('builder');
+  const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
   const [profiles, setProfiles] = useState<ClientProfile[]>([
     { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' },
@@ -49,6 +52,18 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
+
+    // Check for Stripe redirect query parameters
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('success') === 'true') {
+      setCheckoutNotification('🎉 Payment successful! Your subscription is now active.');
+      setCurrentView('billing');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (queryParams.get('canceled') === 'true') {
+      setCheckoutNotification('⚠️ Checkout was canceled. You can try again anytime.');
+      setCurrentView('billing');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -91,7 +106,20 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans relative">
+      {/* CHECKOUT NOTIFICATION BANNER */}
+      {checkoutNotification && (
+        <div className="absolute top-4 right-4 z-50 bg-slate-900 border border-slate-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
+          <p className="text-sm font-bold text-white">{checkoutNotification}</p>
+          <button 
+            onClick={() => setCheckoutNotification(null)}
+            className="text-slate-400 hover:text-white font-bold text-xs bg-slate-800 px-2.5 py-1 rounded-lg"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* GLOBAL NAVIGATION SIDEBAR */}
       <div className="w-20 border-r border-slate-800 bg-slate-950 flex flex-col items-center py-6 gap-6">
         <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-600/30">
@@ -139,6 +167,20 @@ export default function App() {
             title="Platform Analytics"
           >
             Analytics
+          </button>
+          <button 
+            onClick={() => setCurrentView('portal')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'portal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Client Portal"
+          >
+            Portal
+          </button>
+          <button 
+            onClick={() => setCurrentView('emails')}
+            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'emails' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
+            title="Email Templates"
+          >
+            Emails
           </button>
           <button 
             onClick={() => setCurrentView('support')}
@@ -194,6 +236,18 @@ export default function App() {
       {currentView === 'analytics' && (
         <div className="flex-1 h-full overflow-y-auto bg-slate-950">
           <AnalyticsView />
+        </div>
+      )}
+
+      {currentView === 'portal' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <ClientPortalView />
+        </div>
+      )}
+
+      {currentView === 'emails' && (
+        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
+          <EmailTemplatesView />
         </div>
       )}
 
