@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../supabase';
 
 interface AuthViewProps {
   onLoginSuccess: () => void;
@@ -10,86 +10,101 @@ export default function AuthView({ onLoginSuccess }: AuthViewProps) {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg('');
+    setError(null);
+    setMessage(null);
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        setErrorMsg(error.message);
-      } else {
-        alert('Sign up successful! Please check your email or log in.');
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+        setMessage('Registration successful! Check your email or sign in if email confirmations are disabled.');
         setIsSignUp(false);
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setErrorMsg(error.message);
       } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
         onLoginSuccess();
       }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected authentication error occurred.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-white font-sans p-4">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-2xl shadow-lg shadow-blue-600/30 mb-4">
+    <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-100 p-4">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl flex flex-col gap-6">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl text-white shadow-lg shadow-blue-600/30">
             SF
           </div>
-          <h1 className="text-2xl font-black tracking-tight">SiteForge Platform</h1>
-          <p className="text-slate-400 text-xs mt-1">Sign in to manage your local trade web empire</p>
+          <h1 className="text-xl font-black tracking-tight text-white">SiteForge Platform</h1>
+          <p className="text-xs text-slate-400 text-center">Sign in to manage your local trade web empire</p>
         </div>
 
-        {errorMsg && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-semibold text-center">
-            {errorMsg}
+        {error && (
+          <div className="bg-red-500/15 border border-red-500/30 text-red-300 text-xs p-3.5 rounded-xl font-medium leading-relaxed">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs p-3.5 rounded-xl font-medium leading-relaxed">
+            ✨ {message}
           </div>
         )}
 
         <form onSubmit={handleAuth} className="flex flex-col gap-4">
           <div>
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Email Address</label>
             <input 
               type="email" 
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
               placeholder="admin@siteforge.local"
-              className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+              className="mt-1.5 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500"
             />
           </div>
+
           <div>
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Password</label>
             <input 
               type="password" 
-              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
               placeholder="••••••••"
-              className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+              className="mt-1.5 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 transition py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 text-white mt-2"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-blue-600/20 disabled:opacity-50 mt-2"
           >
-            {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
+            {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="text-center pt-2 border-t border-slate-800">
           <button 
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-xs text-slate-400 hover:text-blue-400 transition font-semibold"
+            type="button"
+            onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(null); }}
+            className="text-xs text-slate-400 hover:text-white transition"
           >
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </button>
