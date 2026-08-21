@@ -25,6 +25,7 @@ interface ClientProfile {
   phone: string;
   suburb: string;
   theme: string;
+  designConcept?: string;
 }
 
 export default function App() {
@@ -34,10 +35,10 @@ export default function App() {
   const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' },
-    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing' },
-    { id: '3', businessName: 'Apex Electrical Group', phone: '+61 3 9999 5555', suburb: 'South Yarra VIC', theme: 'electrician' },
-    { id: '4', businessName: 'JRB Tele Services BPO', phone: '+91 9766 724740', suburb: 'Mumbai', theme: 'bpo' }
+    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing', designConcept: 'conversion' },
+    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing', designConcept: 'editorial' },
+    { id: '3', businessName: 'Apex Electrical Group', phone: '+61 3 9999 5555', suburb: 'South Yarra VIC', theme: 'electrician', designConcept: 'modern' },
+    { id: '4', businessName: 'JRB Tele Services BPO', phone: '+91 9766 724740', suburb: 'Mumbai', theme: 'bpo', designConcept: 'minimal' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
 
@@ -46,6 +47,7 @@ export default function App() {
   const [phone, setPhone] = useState(activeProfile.phone);
   const [suburb, setSuburb] = useState(activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(activeProfile.theme);
+  const [designConcept, setDesignConcept] = useState<string>(activeProfile.designConcept || 'conversion');
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
@@ -58,7 +60,6 @@ export default function App() {
       setSession(session);
     });
 
-    // Check for Stripe redirect query parameters
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('success') === 'true') {
       setCheckoutNotification('🎉 Payment successful! Your subscription is now active.');
@@ -79,6 +80,7 @@ export default function App() {
     setPhone(profile.phone);
     setSuburb(profile.suburb);
     setSelectedTheme(profile.theme);
+    setDesignConcept(profile.designConcept || 'conversion');
   };
 
   const handleAddNewProfile = () => {
@@ -88,7 +90,8 @@ export default function App() {
       businessName: `New Client ${newId}`,
       phone: '+61 400 000 000',
       suburb: 'Melbourne VIC',
-      theme: 'plumbing'
+      theme: 'plumbing',
+      designConcept: 'conversion'
     };
     setProfiles([...profiles, newProfile]);
     handleSelectProfile(newProfile);
@@ -111,7 +114,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans relative">
-      {/* CHECKOUT NOTIFICATION BANNER */}
       {checkoutNotification && (
         <div className="absolute top-4 right-4 z-50 bg-slate-900 border border-slate-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
           <p className="text-sm font-bold text-white">{checkoutNotification}</p>
@@ -213,59 +215,15 @@ export default function App() {
       </div>
 
       {/* VIEW RENDERER */}
-      {currentView === 'dashboard' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <LeadsView />
-        </div>
-      )}
-
-      {currentView === 'routing' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <RoutingView />
-        </div>
-      )}
-
-      {currentView === 'domains' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <DomainsView />
-        </div>
-      )}
-
-      {currentView === 'billing' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <SubscriptionsView />
-        </div>
-      )}
-
-      {currentView === 'analytics' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <AnalyticsView />
-        </div>
-      )}
-
-      {currentView === 'portal' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <ClientPortalView />
-        </div>
-      )}
-
-      {currentView === 'emails' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <EmailTemplatesView />
-        </div>
-      )}
-
-      {currentView === 'support' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <SupportView />
-        </div>
-      )}
-
-      {currentView === 'webhooks' && (
-        <div className="flex-1 h-full overflow-y-auto bg-slate-950">
-          <WebhooksView />
-        </div>
-      )}
+      {currentView === 'dashboard' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><LeadsView /></div>}
+      {currentView === 'routing' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><RoutingView /></div>}
+      {currentView === 'domains' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><DomainsView /></div>}
+      {currentView === 'billing' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><SubscriptionsView /></div>}
+      {currentView === 'analytics' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><AnalyticsView /></div>}
+      {currentView === 'portal' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><ClientPortalView /></div>}
+      {currentView === 'emails' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><EmailTemplatesView /></div>}
+      {currentView === 'support' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><SupportView /></div>}
+      {currentView === 'webhooks' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><WebhooksView /></div>}
 
       {currentView === 'builder' && (
         <div className="flex h-full w-full overflow-hidden">
@@ -273,7 +231,7 @@ export default function App() {
           <div className="w-[380px] border-r border-slate-800 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto">
             <div>
               <h1 className="text-xl font-black tracking-tight text-white">SITEFORGE <span className="text-blue-500">ENGINE</span></h1>
-              <p className="text-xs text-slate-400 mt-1">Multi-tenant trade template generator</p>
+              <p className="text-xs text-slate-400 mt-1">Multi-tenant AI website generator</p>
             </div>
 
             <ProfileSwitcher 
@@ -296,6 +254,20 @@ export default function App() {
                   <option value="electrician">Electrical Contracting</option>
                   <option value="hvac">HVAC & Climate Control</option>
                   <option value="bpo">BPO & Call Center Services</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Design Concept</label>
+                <select 
+                  value={designConcept} 
+                  onChange={(e) => setDesignConcept(e.target.value)}
+                  className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 text-white"
+                >
+                  <option value="conversion">Concept 01: High-Conversion Local</option>
+                  <option value="modern">Concept 02: Modern Tech</option>
+                  <option value="editorial">Concept 03: Luxury / Editorial</option>
+                  <option value="minimal">Concept 04: Clean Minimal</option>
                 </select>
               </div>
 
@@ -340,7 +312,7 @@ export default function App() {
 
             <div className="mt-auto pt-4 border-t border-slate-800 flex flex-col gap-3">
               <button 
-                onClick={() => exportToHtml(businessName, phone, suburb, selectedTheme)}
+                onClick={() => exportToHtml(businessName, phone, suburb, selectedTheme, designConcept)}
                 className="w-full bg-blue-600 hover:bg-blue-500 transition py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 text-white"
               >
                 Export Live Preview Link
@@ -350,21 +322,11 @@ export default function App() {
 
           {/* RIGHT LIVE PREVIEW PANE */}
           <div className="flex-1 h-full overflow-y-auto bg-slate-900">
-            {selectedTheme === 'plumbing' && (
-              <PlumbingTemplate businessName={businessName} phone={phone} suburb={suburb} />
-            )}
-            {selectedTheme === 'roofing' && (
-              <RoofingTemplate businessName={businessName} phone={phone} suburb={suburb} />
-            )}
-            {selectedTheme === 'electrician' && (
-              <ElectricianTemplate businessName={businessName} phone={phone} suburb={suburb} />
-            )}
-            {selectedTheme === 'hvac' && (
-              <HvacTemplate businessName={businessName} phone={phone} suburb={suburb} />
-            )}
-            {selectedTheme === 'bpo' && (
-              <BpoTemplate businessName={businessName} phone={phone} suburb={suburb} />
-            )}
+            {selectedTheme === 'plumbing' && <PlumbingTemplate businessName={businessName} phone={phone} suburb={suburb} />}
+            {selectedTheme === 'roofing' && <RoofingTemplate businessName={businessName} phone={phone} suburb={suburb} />}
+            {selectedTheme === 'electrician' && <ElectricianTemplate businessName={businessName} phone={phone} suburb={suburb} />}
+            {selectedTheme === 'hvac' && <HvacTemplate businessName={businessName} phone={phone} suburb={suburb} />}
+            {selectedTheme === 'bpo' && <BpoTemplate businessName={businessName} phone={phone} suburb={suburb} />}
           </div>
         </div>
       )}
