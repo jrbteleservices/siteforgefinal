@@ -17,8 +17,7 @@ import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
 import { exportToHtml } from './utils/exporter';
 import { generateAiContent } from './utils/ai';
-import { supabase } from './lib/supabase';
-
+import { supabase } from './supabase';
 interface ClientProfile {
   id: string;
   businessName: string;
