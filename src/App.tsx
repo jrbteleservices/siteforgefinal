@@ -29,6 +29,10 @@ interface ClientProfile {
 }
 
 export default function App() {
+  // --- AUTHENTICATION STATES RESTORED ---
+  const [session, setSession] = useState<any>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing' | 'portal' | 'emails'>('builder');
   const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
@@ -49,7 +53,15 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    // Supabase Auth checks have been completely removed to bypass the network lock.
+    // --- SUPABASE AUTH LISTENERS RESTORED ---
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setCheckingAuth(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('success') === 'true') {
@@ -61,6 +73,8 @@ export default function App() {
       setCurrentView('billing');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSelectProfile = (profile: ClientProfile) => {
@@ -92,6 +106,15 @@ export default function App() {
     setBusinessName(newHeadline);
     setIsGenerating(false);
   };
+
+  // --- AUTHENTICATION GATES RESTORED ---
+  if (checkingAuth) {
+    return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading SiteForge Session...</div>;
+  }
+
+  if (!session) {
+    return <AuthView onLoginSuccess={() => {}} />;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans relative">
@@ -186,7 +209,7 @@ export default function App() {
         </div>
         <div className="mt-auto px-3 w-full">
           <button 
-            onClick={() => alert("Authentication is currently bypassed for development. Sign out is disabled.")}
+            onClick={() => supabase.auth.signOut()}
             className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold text-xs transition border border-red-500/20"
             title="Sign Out"
           >
