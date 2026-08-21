@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["node_modules", "supabase"]
+  "exclude": ["node_modules", "src/supabase"]
 }
