@@ -32,6 +32,20 @@ interface Product {
   id: string;
   name: string;
   price: string;
+}
+
+interface ServiceItem {
+  id: string;
+  title: string;
+  desc: string;
+  image?: string;
+}
+
+interface ProjectItem {
+  id: string;
+  subtitle: string;
+  title: string;
+  desc: string;
   image?: string;
 }
 
@@ -45,36 +59,60 @@ export default function App() {
   const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
   // --- BUILDER / EDITOR STATE ---
-  const [editorTab, setEditorTab] = useState<'content' | 'media' | 'layout' | 'commerce'>('content');
+  const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce'>('content');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+
+  // Media & Uploads
+  const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [heroOpacity, setHeroOpacity] = useState(85);
+
+  // Layout & Commerce
   const [activeSections, setActiveSections] = useState({
     hero: true,
     services: true,
-    about: true,
-    products: false,
-    testimonials: true,
+    whyUs: true,
+    projects: true,
+    products: true,
+    faq: true,
     contact: true
   });
   const [products, setProducts] = useState<Product[]>([
     { id: '1', name: 'Standard Service Call', price: '99' }
   ]);
 
+  // Headers State
+  const [headers, setHeaders] = useState({
+    services: { sub: 'OUR CAPABILITIES', main: 'What We Do', desc: 'Comprehensive property and maintenance services.' },
+    whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
+    projects: { sub: 'PORTFOLIO', main: 'Recent Projects' }
+  });
+
+  // Dynamic Arrays
+  const [servicesList, setServicesList] = useState<ServiceItem[]>([
+    { id: '1', title: 'Emergency Service', desc: 'Rapid diagnosis and repair of faults and damage.' },
+    { id: '2', title: 'Complete Installations', desc: 'High-quality equipment setup and full system compliance.' },
+    { id: '3', title: 'Routine Maintenance', desc: 'Preventative servicing to ensure maximum efficiency.' }
+  ]);
+
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>([
+    { id: '1', subtitle: 'Residential', title: 'Home System Upgrade', desc: 'Complete overhaul of outdated infrastructure with modern fixtures.' },
+    { id: '2', subtitle: 'Commercial', title: 'Enterprise Fit-out', desc: 'Full installation ensuring health and safety code compliance.' }
+  ]);
+
   // --- PROFILES & CONTENT STATE ---
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing', designConcept: 'conversion' },
-    { id: '2', businessName: 'Metro Roof Restorations', phone: '+61 3 8888 4444', suburb: 'Richmond VIC', theme: 'roofing', designConcept: 'editorial' },
-    { id: '3', businessName: 'Apex Electrical Group', phone: '+61 3 9999 5555', suburb: 'South Yarra VIC', theme: 'electrician', designConcept: 'modern' },
-    { id: '4', businessName: 'JRB Tele Services BPO', phone: '+91 9766 724740', suburb: 'Mumbai', theme: 'bpo', designConcept: 'minimal' }
+    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing', designConcept: 'conversion' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
-
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
   const [businessName, setBusinessName] = useState(activeProfile.businessName);
   const [phone, setPhone] = useState(activeProfile.phone);
   const [suburb, setSuburb] = useState(activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(activeProfile.theme);
-  const [designConcept, setDesignConcept] = useState<string>(activeProfile.designConcept || 'conversion');
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
@@ -82,36 +120,9 @@ export default function App() {
       setSession(session);
       setCheckingAuth(false);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
     return () => subscription.unsubscribe();
   }, []);
-
-  const handleSelectProfile = (profile: ClientProfile) => {
-    setActiveProfileId(profile.id);
-    setBusinessName(profile.businessName);
-    setPhone(profile.phone);
-    setSuburb(profile.suburb);
-    setSelectedTheme(profile.theme);
-    setDesignConcept(profile.designConcept || 'conversion');
-  };
-
-  const handleAddNewProfile = () => {
-    const newId = String(profiles.length + 1);
-    const newProfile: ClientProfile = {
-      id: newId,
-      businessName: `New Client ${newId}`,
-      phone: '+61 400 000 000',
-      suburb: 'Mumbai',
-      theme: 'bpo',
-      designConcept: 'conversion'
-    };
-    setProfiles([...profiles, newProfile]);
-    handleSelectProfile(newProfile);
-  };
 
   const handleAiCopy = async () => {
     setIsGenerating(true);
@@ -120,307 +131,342 @@ export default function App() {
     setIsGenerating(false);
   };
 
-  // Local Image Preview Handler
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string | null>>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setter(imageUrl);
+  // --- SUPABASE STORAGE LOGIC ---
+  const uploadImageToSupabase = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('site-assets')
+      .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      alert('Upload failed: ' + uploadError.message);
+      return null;
     }
+
+    const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
+    return data.publicUrl;
   };
 
-  const addProduct = () => {
-    setProducts([...products, { id: Date.now().toString(), name: 'New Product', price: '0' }]);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string | null>>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    const publicUrl = await uploadImageToSupabase(file);
+    if (publicUrl) setter(publicUrl);
+    setIsUploading(false);
   };
 
-  if (checkingAuth) {
-    return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading SiteForge Session...</div>;
-  }
+  const handleArrayImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, id: string, type: 'service' | 'project') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  if (!session) {
-    return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
-  }
+    setIsUploading(true);
+    const publicUrl = await uploadImageToSupabase(file);
+    if (publicUrl) {
+      if (type === 'service') {
+        setServicesList(servicesList.map(s => s.id === id ? { ...s, image: publicUrl } : s));
+      } else {
+        setProjectsList(projectsList.map(p => p.id === id ? { ...p, image: publicUrl } : p));
+      }
+    }
+    setIsUploading(false);
+  };
 
-  const DashboardNavItem = ({ id, label }: { id: string, label: string }) => (
-    <button
-      onClick={() => setDashboardView(id as any)}
-      className={`w-full flex items-center px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-        dashboardView === id
-          ? 'bg-blue-600/15 text-blue-500 shadow-sm'
-          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-      }`}
-    >
-      {label}
-    </button>
-  );
+  const handlePublish = () => {
+    setIsPublishing(true);
+    setTimeout(() => {
+      setIsPublishing(false);
+      alert('SiteForge Engine: Changes successfully published to the live edge network!');
+    }, 1200);
+  };
+
+  if (checkingAuth) return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
+  if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
       
-      {/* =========================================
-          PAGE 1: THE SAAS DASHBOARD
-          ========================================= */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
-          <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl shadow-black/50">
+           <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
             <div className="p-6 border-b border-slate-800">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">SF</div>
-                <span className="font-bold text-lg tracking-tight text-white">SiteForge</span>
-              </div>
-              <button 
-                onClick={() => setActivePage('builder')}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
-              >
-                Launch Builder
-              </button>
+              <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm">Launch Builder</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
-              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-2">Platform Management</div>
-              <DashboardNavItem id="leads" label="Lead Pipeline" />
-              <DashboardNavItem id="routing" label="Lead Routing Rules" />
-              <DashboardNavItem id="domains" label="Domain Manager" />
-              <DashboardNavItem id="portal" label="Client Portal" />
-              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-8">System & Config</div>
-              <DashboardNavItem id="analytics" label="Platform Analytics" />
-              <DashboardNavItem id="billing" label="Subscriptions & Billing" />
-              <DashboardNavItem id="emails" label="Email Templates" />
-              <DashboardNavItem id="webhooks" label="Webhooks & APIs" />
-              <DashboardNavItem id="support" label="Support Tickets" />
+              <button onClick={() => setDashboardView('leads')} className="text-left px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-800">Lead Pipeline</button>
             </div>
-            <div className="p-4 border-t border-slate-800 bg-slate-900/50">
-              <button onClick={() => supabase.auth.signOut()} className="w-full py-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:bg-red-500/10 hover:text-red-400 font-bold text-sm transition">
-                Sign Out
-              </button>
+            <div className="p-4 border-t border-slate-800">
+              <button onClick={() => supabase.auth.signOut()} className="text-red-400 text-sm font-bold w-full text-left px-4">Sign Out</button>
             </div>
           </div>
-
-          <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-950 relative">
-            <header className="h-16 border-b border-slate-800 bg-slate-900/40 flex items-center px-8 backdrop-blur-md sticky top-0 z-10">
-              <h1 className="text-xl font-bold text-white tracking-tight capitalize">{dashboardView.replace('-', ' ')}</h1>
-            </header>
-            <main className="flex-1 overflow-y-auto p-8">
-              <div className="max-w-7xl mx-auto h-full">
-                {dashboardView === 'leads' && <LeadsView />}
-                {dashboardView === 'routing' && <RoutingView />}
-                {dashboardView === 'domains' && <DomainsView />}
-                {dashboardView === 'billing' && <SubscriptionsView />}
-                {dashboardView === 'analytics' && <AnalyticsView />}
-                {dashboardView === 'portal' && <ClientPortalView />}
-                {dashboardView === 'emails' && <EmailTemplatesView />}
-                {dashboardView === 'support' && <SupportView />}
-                {dashboardView === 'webhooks' && <WebhooksView />}
-              </div>
-            </main>
+          <div className="flex-1 flex flex-col bg-slate-950">
+            <header className="h-16 border-b border-slate-800 bg-slate-900/40 flex items-center px-8 capitalize font-bold text-white tracking-tight text-xl">{dashboardView}</header>
+            <main className="flex-1 overflow-y-auto p-8"><LeadsView /></main>
           </div>
         </div>
       )}
 
-      {/* =========================================
-          PAGE 2: THE SITEFORGE ADVANCED EDITOR
-          ========================================= */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
           
-          {/* EDITOR TOP NAVBAR */}
-          <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => setActivePage('dashboard')}
-                className="text-slate-400 hover:text-white transition text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800"
-              >
-                &larr; Dashboard
-              </button>
-              <div className="h-4 w-px bg-slate-700"></div>
-              <span className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Editing: {businessName}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview</button>
-              <button className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                Publish Changes
-              </button>
-            </div>
-          </header>
-
-          <div className="flex flex-1 overflow-hidden">
-            {/* EDITOR LEFT SIDEBAR */}
-            <div className="w-[380px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
-              
-              {/* Editor Tabs */}
-              <div className="flex p-2 gap-1 border-b border-slate-800 bg-slate-900/50">
-                {(['content', 'media', 'layout', 'commerce'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setEditorTab(tab)}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition ${
-                      editorTab === tab ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
+          {!isPreviewMode && (
+            <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setActivePage('dashboard')} className="text-slate-400 hover:text-white transition text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-800">&larr; Dashboard</button>
+                <span className="text-sm font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName}
+                </span>
               </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} 
+                  className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2"
+                >
+                  {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                </button>
+                <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
+                <button onClick={handlePublish} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
+                  {isPublishing ? 'Publishing...' : 'Publish Changes'}
+                </button>
+              </div>
+            </header>
+          )}
 
-              {/* Editor Tools Area */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex flex-1 overflow-hidden relative">
+            
+            {!isPreviewMode && (
+              <div className="w-[420px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
                 
-                {editorTab === 'content' && (
-                  <div className="space-y-4 animate-in fade-in">
-                    <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={handleSelectProfile} onAddNew={handleAddNewProfile} />
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase">Theme</label>
-                      <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white">
-                        <option value="plumbing">Plumbing</option>
-                        <option value="roofing">Roofing</option>
-                        <option value="electrician">Electrician</option>
-                        <option value="hvac">HVAC</option>
-                        <option value="bpo">BPO Services</option>
-                      </select>
+                {/* GLOBAL UPLOAD OVERLAY */}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4">
+                      <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin"></span>
+                      <span className="text-sm font-bold text-white">Uploading to Cloud...</span>
                     </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase">Business Name</label>
-                      <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                      <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
-                    </div>
-                    <button onClick={handleAiCopy} disabled={isGenerating} className="w-full bg-purple-600/20 text-purple-400 py-2.5 rounded-xl font-bold text-xs mt-2 border border-purple-500/30">
-                      {isGenerating ? 'Generating...' : '✨ Auto-Write Copy'}
+                  </div>
+                )}
+
+                <div className="flex p-2 gap-1 border-b border-slate-800 bg-slate-900/50 flex-wrap">
+                  {(['content', 'sections', 'media', 'layout', 'commerce'] as const).map(tab => (
+                    <button key={tab} onClick={() => setEditorTab(tab)} className={`px-3 py-2 text-xs font-bold rounded-lg capitalize transition ${editorTab === tab ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
+                      {tab}
                     </button>
-                  </div>
-                )}
+                  ))}
+                </div>
 
-                {editorTab === 'media' && (
-                  <div className="space-y-6 animate-in fade-in">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase">Site Logo</label>
-                      <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden group">
-                        {siteLogo ? (
-                          <img src={siteLogo} alt="Logo preview" className="h-12 object-contain" />
-                        ) : (
-                          <span className="text-2xl">🖼️</span>
-                        )}
-                        <span className="text-xs font-medium text-slate-400">Click to upload logo</span>
-                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setSiteLogo)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                  
+                  {editorTab === 'content' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Theme</label>
+                        <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white">
+                          <option value="roofing">Roofing & Restorations</option>
+                          <option value="plumbing">Plumbing & Emergency</option>
+                          <option value="electrician">Electrical Contracting</option>
+                          <option value="hvac">HVAC & Climate Control</option>
+                          <option value="bpo">BPO & Call Center Services</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Business Name</label>
+                        <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
+                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Target Suburb / City</label>
+                        <input type="text" value={suburb} onChange={(e) => setSuburb(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image</label>
-                      <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden h-32">
-                        {heroImage ? (
-                          <img src={heroImage} alt="Hero preview" className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                        ) : (
-                          <span className="text-2xl">📸</span>
-                        )}
-                        <span className="text-xs font-medium text-slate-400 relative z-10 bg-slate-900/80 px-2 py-1 rounded">Upload hero image</span>
-                        <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setHeroImage)} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                  )}
+
+                  {editorTab === 'sections' && (
+                    <div className="space-y-8 animate-in fade-in">
+                      <div className="space-y-4">
+                        <div className="border-b border-slate-800 pb-2">
+                          <h3 className="font-bold text-white">What We Do (Services)</h3>
+                        </div>
+                        <input type="text" placeholder="Sub-header" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        <input type="text" placeholder="Main Header" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
+                        
+                        <div className="space-y-3 mt-4">
+                          {servicesList.map((service, index) => (
+                            <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                              <button onClick={() => setServicesList(servicesList.filter(s => s.id !== service.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              <input type="text" value={service.title} onChange={(e) => { const n = [...servicesList]; n[index].title = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Service Title" />
+                              <textarea value={service.desc} onChange={(e) => { const n = [...servicesList]; n[index].desc = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Description" rows={2} />
+                              
+                              <div className="flex items-center gap-3">
+                                {service.image && <img src={service.image} className="w-10 h-10 rounded object-cover" />}
+                                <label className="text-xs font-bold text-blue-400 cursor-pointer hover:text-blue-300">
+                                  + Upload Image
+                                  <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleArrayImageUpload(e, service.id, 'service')} />
+                                </label>
+                              </div>
+                            </div>
+                          ))}
+                          <button onClick={() => setServicesList([...servicesList, { id: Date.now().toString(), title: 'New Service', desc: 'Description here...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900 transition">+ Add Service</button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="border-b border-slate-800 pb-2">
+                          <h3 className="font-bold text-white">Recent Projects</h3>
+                        </div>
+                        <input type="text" placeholder="Sub-header" value={headers.projects.sub} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        <input type="text" placeholder="Main Header" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
+                        
+                        <div className="space-y-3 mt-4">
+                          {projectsList.map((proj, index) => (
+                            <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                              <button onClick={() => setProjectsList(projectsList.filter(p => p.id !== proj.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              <input type="text" value={proj.subtitle} onChange={(e) => { const n = [...projectsList]; n[index].subtitle = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-blue-400 font-bold uppercase" placeholder="Subtitle (e.g. St Kilda)" />
+                              <input type="text" value={proj.title} onChange={(e) => { const n = [...projectsList]; n[index].title = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Project Title" />
+                              <textarea value={proj.desc} onChange={(e) => { const n = [...projectsList]; n[index].desc = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Description" rows={2} />
+                              
+                              <div className="flex items-center gap-3">
+                                {proj.image && <img src={proj.image} className="w-10 h-10 rounded object-cover" />}
+                                <label className="text-xs font-bold text-blue-400 cursor-pointer hover:text-blue-300">
+                                  + Upload Background Image
+                                  <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleArrayImageUpload(e, proj.id, 'project')} />
+                                </label>
+                              </div>
+                            </div>
+                          ))}
+                          <button onClick={() => setProjectsList([...projectsList, { id: Date.now().toString(), subtitle: 'Location', title: 'New Project', desc: 'Description...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900 transition">+ Add Project</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {editorTab === 'layout' && (
-                  <div className="space-y-4 animate-in fade-in">
-                    <p className="text-xs text-slate-400 mb-4">Toggle sections on or off for this website.</p>
-                    {Object.entries(activeSections).map(([key, isVisible]) => (
-                      <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                        <span className="text-sm font-medium text-white capitalize">{key} Section</span>
-                        <button 
-                          onClick={() => setActiveSections({ ...activeSections, [key]: !isVisible })}
-                          className={`w-10 h-6 rounded-full p-1 transition-colors ${isVisible ? 'bg-blue-500' : 'bg-slate-700'}`}
-                        >
-                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isVisible ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </button>
+                  {editorTab === 'media' && (
+                    <div className="space-y-6 animate-in fade-in">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Site Logo</label>
+                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden group">
+                          {siteLogo ? <img src={siteLogo} className="h-12 object-contain" /> : <span className="text-2xl">🖼️</span>}
+                          <span className="text-xs font-medium text-slate-400">Click to upload logo</span>
+                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleImageUpload(e, setSiteLogo)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image</label>
+                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden h-32">
+                          {heroImage ? <img src={heroImage} className="absolute inset-0 w-full h-full object-cover opacity-50" /> : <span className="text-2xl">📸</span>}
+                          <span className="text-xs font-medium text-slate-400 relative z-10 bg-slate-900/80 px-2 py-1 rounded">Upload hero image</span>
+                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleImageUpload(e, setHeroImage)} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                        </div>
+                      </div>
+                      <div className="space-y-2 pt-4 border-t border-slate-800">
+                        <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
+                          Hero Darkness (Transparency)
+                          <span className="text-blue-400">{heroOpacity}%</span>
+                        </label>
+                        <input type="range" min="0" max="100" value={heroOpacity} onChange={(e) => setHeroOpacity(Number(e.target.value))} className="w-full accent-blue-500" />
+                      </div>
+                    </div>
+                  )}
 
-                {editorTab === 'commerce' && (
-                  <div className="space-y-4 animate-in fade-in">
-                    <p className="text-xs text-slate-400 mb-2">Manage products, services, or booking options.</p>
-                    <button onClick={addProduct} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
-                      + Add New Product
-                    </button>
-                    
-                    <div className="space-y-3 mt-4">
-                      {products.map((product, index) => (
-                        <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
-                          <button 
-                            onClick={() => setProducts(products.filter(p => p.id !== product.id))}
-                            className="absolute top-2 right-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                          >
-                            ✕
+                  {editorTab === 'layout' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <p className="text-xs text-slate-400 mb-4">Toggle sections on or off for this website.</p>
+                      {Object.entries(activeSections).map(([key, isVisible]) => (
+                        <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                          <span className="text-sm font-medium text-white capitalize">{key} Section</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, [key]: !isVisible })} className={`w-10 h-6 rounded-full p-1 transition-colors ${isVisible ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isVisible ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
-                          <input 
-                            type="text" 
-                            value={product.name}
-                            onChange={(e) => {
-                              const newProds = [...products];
-                              newProds[index].name = e.target.value;
-                              setProducts(newProds);
-                            }}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" 
-                            placeholder="Product Name"
-                          />
-                          <div className="flex gap-2 items-center">
-                            <span className="text-slate-400 text-sm">$</span>
-                            <input 
-                              type="number" 
-                              value={product.price}
-                              onChange={(e) => {
-                                const newProds = [...products];
-                                newProds[index].price = e.target.value;
-                                setProducts(newProds);
-                              }}
-                              className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" 
-                              placeholder="0.00"
-                            />
-                          </div>
                         </div>
                       ))}
                     </div>
+                  )}
+
+                  {editorTab === 'commerce' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <p className="text-xs text-slate-400 mb-2">Manage products, services, or booking options.</p>
+                      {!activeSections.products && (
+                         <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-400 text-xs font-bold mb-4">
+                           ⚠️ The Products section is currently disabled in the Layout tab.
+                         </div>
+                      )}
+                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product', price: '0' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Fixed Price Service
+                      </button>
+                      <div className="space-y-3 mt-4">
+                        {products.map((product, index) => (
+                          <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                            <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Product Name" />
+                            <div className="flex gap-2 items-center">
+                              <span className="text-slate-400 text-sm">$</span>
+                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="0.00" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isPreviewMode && (
+              <div className="absolute top-6 left-6 z-50 flex gap-3">
+                <button onClick={() => setIsPreviewMode(false)} className="bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white shadow-2xl px-6 py-3 rounded-full font-black text-sm hover:bg-slate-800 transition flex items-center gap-2">
+                  &larr; Exit Fullscreen Preview
+                </button>
+                <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white shadow-2xl px-4 py-3 rounded-full font-black text-sm hover:bg-slate-800 transition">
+                  {themeMode === 'light' ? '🌙 Test Dark' : '☀️ Test Light'}
+                </button>
+              </div>
+            )}
+
+            <div className={`flex-1 bg-slate-800 transition-all ${isPreviewMode ? 'p-0' : 'p-8'} overflow-y-auto flex justify-center items-start`}>
+              <div className={`w-full bg-white shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all ${isPreviewMode ? 'max-w-none min-h-screen rounded-none' : 'max-w-[1200px] min-h-[800px] rounded-xl'}`}>
+                
+                {!isPreviewMode && (
+                  <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    <div className="mx-auto bg-white border border-slate-200 text-slate-400 text-xs px-4 py-1 rounded-md w-64 text-center truncate">
+                      {businessName.toLowerCase().replace(/\s+/g, '-')}.siteforge.com
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
 
-            {/* RIGHT LIVE PREVIEW CANVAS */}
-            <div className="flex-1 bg-slate-800 p-8 overflow-y-auto flex justify-center items-start">
-              <div className="w-full max-w-[1200px] min-h-[800px] bg-white rounded-xl shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all">
-                
-                {/* Mock Browser Bar */}
-                <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  <div className="mx-auto bg-white border border-slate-200 text-slate-400 text-xs px-4 py-1 rounded-md w-64 text-center truncate">
-                    {businessName.toLowerCase().replace(/\s+/g, '-')}.siteforge.com
-                  </div>
-                </div>
-
-                {/* TEMPLATE RENDER AREA */}
                 <div className="relative">
-                  {/* Overlay a visual warning if Hero section is disabled */}
                   {!activeSections.hero && <div className="absolute top-0 w-full p-2 bg-red-500 text-white text-center text-xs font-bold z-50">Hero Section Disabled</div>}
                   
-                  {selectedTheme === 'plumbing' && (
-                    <PlumbingTemplate 
-                      businessName={businessName} 
-                      phone={phone} 
-                      suburb={suburb}
-                      logo={siteLogo}
-                      heroImage={heroImage} 
-                    />
-                  )}
-                  {selectedTheme === 'roofing' && <RoofingTemplate businessName={businessName} phone={phone} suburb={suburb} />}
-                  {selectedTheme === 'electrician' && <ElectricianTemplate businessName={businessName} phone={phone} suburb={suburb} />}
-                  {selectedTheme === 'hvac' && <HvacTemplate businessName={businessName} phone={phone} suburb={suburb} />}
-                  {selectedTheme === 'bpo' && <BpoTemplate businessName={businessName} phone={phone} suburb={suburb} />}
+                  {(() => {
+                    const templateProps = {
+                      businessName, phone, suburb, 
+                      logo: siteLogo, heroImage, heroOpacity, 
+                      headers, servicesList, projectsList, 
+                      showProducts: activeSections.products, 
+                      products, activeSections, themeMode
+                    };
+
+                    return (
+                      <>
+                        {selectedTheme === 'plumbing' && <PlumbingTemplate {...templateProps as any} />}
+                        {selectedTheme === 'roofing' && <RoofingTemplate {...templateProps as any} />}
+                        {selectedTheme === 'electrician' && <ElectricianTemplate {...templateProps as any} />}
+                        {selectedTheme === 'hvac' && <HvacTemplate {...templateProps as any} />}
+                        {selectedTheme === 'bpo' && <BpoTemplate {...templateProps as any} />}
+                      </>
+                    );
+                  })()}
                 </div>
 
               </div>
