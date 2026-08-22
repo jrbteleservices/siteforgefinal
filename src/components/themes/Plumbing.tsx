@@ -1,17 +1,26 @@
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, ShieldCheck, Clock, Wrench, ChevronDown, ChevronUp, MapPin, Mail } from 'lucide-react';
-import { supabase } from '../../lib/supabase'; // Keeping your exact import path
+import { Phone, MessageCircle, CheckCircle, ShieldCheck, Clock, Wrench, ChevronDown, ChevronUp, MapPin, Mail, ShoppingCart, Facebook, Instagram, Star, Video } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
-// 1. ADDED LOGO AND HERO IMAGE PROPS
+// ALL THE NEW INTERFACES ADDED
+interface ServiceItem { id: string; title: string; desc: string; image?: string; }
+interface ProjectItem { id: string; subtitle: string; title: string; desc: string; image?: string; }
+interface ReviewItem { id: string; name: string; rating: number; text: string; }
+interface Product { id: string; name: string; price: string; }
+
 interface TemplateProps {
-  businessName: string;
-  phone: string;
-  suburb: string;
-  logo?: string | null;
-  heroImage?: string | null;
+  businessName: string; phone: string; suburb: string; city: string; streetAddress: string; email: string;
+  socials: { facebook: string; instagram: string; tiktok: string; };
+  colorPalette: string; logo?: string | null; heroImage?: string | null; heroOpacity: number;
+  headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
+  showProducts: boolean; products: Product[]; activeSections: any; themeMode: 'light' | 'dark';
 }
 
-export default function PlumbingTemplate({ businessName, phone, suburb, logo, heroImage }: TemplateProps) {
+export default function PlumbingTemplate({ 
+  businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+  logo, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
+  showProducts, products, activeSections, themeMode 
+}: TemplateProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [leadName, setLeadName] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
@@ -20,368 +29,244 @@ export default function PlumbingTemplate({ businessName, phone, suburb, logo, he
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 2. ADDED FALLBACK IMAGE
   const displayHero = heroImage || "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
+  const overlayOpacity = heroOpacity / 100; 
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+    e.preventDefault(); setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-
-    const { error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          owner_id: user?.id || '00000000-0000-0000-0000-000000000000',
-          name: leadName,
-          email: leadEmail || 'no-email@provided.com',
-          phone: leadPhone,
-          message: `[Website Inquiry - ${suburb}] ${leadMessage}`
-        }
-      ]);
-
+    const { error } = await supabase.from('leads').insert([{
+        owner_id: user?.id || '00000000-0000-0000-0000-000000000000',
+        name: leadName, email: leadEmail || 'no-email@provided.com', phone: leadPhone,
+        message: `[Inquiry - ${suburb}] ${leadMessage}`
+    }]);
     setLoading(false);
-
-    if (error) {
-      alert('Error submitting inquiry: ' + error.message);
-    } else {
-      setSubmitted(true);
-    }
+    if (error) alert('Error submitting inquiry: ' + error.message); else setSubmitted(true);
   };
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
+  // --- DYNAMIC LIGHT/DARK CLASSES ---
+  const isDark = themeMode === 'dark';
+  const bgMain = isDark ? 'bg-slate-950' : 'bg-slate-50';
+  const textMain = isDark ? 'text-slate-100' : 'text-slate-900';
+  const textMuted = isDark ? 'text-slate-400' : 'text-slate-500';
+  const bgCard = isDark ? 'bg-slate-900' : 'bg-white';
+  const borderMuted = isDark ? 'border-slate-800' : 'border-slate-200';
+  const bgHeader = isDark ? 'bg-slate-950/90' : 'bg-white/90';
+
+  // --- SAFE COLOR PALETTE MAPPING ---
+  const themeColors: Record<string, any> = {
+    blue: { bg: 'bg-blue-600', hover: 'hover:bg-blue-500', text: 'text-blue-500', border: 'border-blue-500', lightBg: 'bg-blue-500/10' },
+    emerald: { bg: 'bg-emerald-600', hover: 'hover:bg-emerald-500', text: 'text-emerald-500', border: 'border-emerald-500', lightBg: 'bg-emerald-500/10' },
+    rose: { bg: 'bg-rose-600', hover: 'hover:bg-rose-500', text: 'text-rose-500', border: 'border-rose-500', lightBg: 'bg-rose-500/10' },
+    amber: { bg: 'bg-amber-500', hover: 'hover:bg-amber-400', text: 'text-amber-500', border: 'border-amber-500', lightBg: 'bg-amber-500/10' },
+    violet: { bg: 'bg-violet-600', hover: 'hover:bg-violet-500', text: 'text-violet-500', border: 'border-violet-500', lightBg: 'bg-violet-500/10' },
+    cyan: { bg: 'bg-cyan-600', hover: 'hover:bg-cyan-500', text: 'text-cyan-500', border: 'border-cyan-500', lightBg: 'bg-cyan-500/10' }
   };
+  const c = themeColors[colorPalette] || themeColors.blue;
 
   return (
-    <div className="bg-slate-950 text-slate-100 min-h-screen font-sans selection:bg-blue-600 selection:text-white">
-      {/* 1. STICKY NAVIGATION BAR */}
-      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-8 py-4 flex justify-between items-center">
+    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300`}>
+      
+      {/* 1. HEADER */}
+      <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center transition-colors duration-300`}>
         <div className="flex items-center gap-3">
-          
-          {/* 3. INJECTED DYNAMIC LOGO HERE */}
           {logo ? (
             <img src={logo} alt={businessName} className="h-9 object-contain" />
           ) : (
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-lg shadow-lg shadow-blue-600/30 text-white">
+            <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center font-black text-lg text-white shadow-md`}>
               {businessName.charAt(0)}
             </div>
           )}
-          
-          <span className="font-extrabold text-lg tracking-tight text-white">{businessName}</span>
+          <span className={`font-extrabold text-lg tracking-tight ${textMain}`}>{businessName}</span>
         </div>
         
-        <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-slate-300 uppercase tracking-wider">
-          <a href="#services" className="hover:text-blue-400 transition">What We Do</a>
-          <a href="#why-us" className="hover:text-blue-400 transition">Why Us</a>
-          <a href="#projects" className="hover:text-blue-400 transition">Recent Projects</a>
-          <a href="#areas" className="hover:text-blue-400 transition">Areas We Serve</a>
-          <a href="#faq" className="hover:text-blue-400 transition">FAQ</a>
-          <a href="#contact" className="hover:text-blue-400 transition">Get in Touch</a>
+        <nav className={`hidden md:flex items-center gap-8 text-xs font-bold ${textMuted} uppercase tracking-wider`}>
+          {activeSections.services && <a href="#services" className={`hover:${c.text} transition`}>Services</a>}
+          {activeSections.projects && <a href="#projects" className={`hover:${c.text} transition`}>Projects</a>}
+          {activeSections.reviews && <a href="#reviews" className={`hover:${c.text} transition`}>Reviews</a>}
+          {showProducts && <a href="#products" className={`hover:${c.text} transition`}>Pricing</a>}
         </nav>
 
-        <div className="flex items-center gap-3">
-          <a 
-            href={`tel:${phone}`}
-            className="hidden sm:flex items-center gap-2 bg-slate-900 border border-slate-800 hover:border-slate-700 px-4 py-2.5 rounded-xl font-bold text-xs transition text-white"
-          >
-            <Phone className="w-3.5 h-3.5 text-blue-400" />
-            {phone}
+        <div className="flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-2 mr-2 border-r border-slate-300 dark:border-slate-700 pr-4">
+            {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Facebook className="w-4 h-4" /></a>}
+            {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Instagram className="w-4 h-4" /></a>}
+            {socials.tiktok && <a href={socials.tiktok} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Video className="w-4 h-4" /></a>}
+          </div>
+          <a href={`tel:${phone}`} className={`hidden sm:flex items-center gap-2 ${bgCard} border ${borderMuted} px-4 py-2.5 rounded-xl font-bold text-xs transition ${textMain} hover:${c.border}`}>
+            <Phone className={`w-3.5 h-3.5 ${c.text}`} /> {phone}
           </a>
-          <a 
-            href="#contact"
-            className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition shadow-lg shadow-blue-600/20"
-          >
+          <a href="#contact" className={`${c.bg} ${c.hover} text-white px-5 py-2.5 rounded-xl font-bold text-xs transition shadow-lg`}>
             Get a Quote
           </a>
         </div>
       </header>
 
       {/* 2. HERO SECTION */}
-      {/* 4. WRAPPED HERO IN DYNAMIC BACKGROUND IMAGE */}
-      <section className="relative overflow-hidden">
-        
-        {/* Dynamic Background Image with Heavy Dark Overlay to preserve your text visibility */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-all duration-500"
-          style={{ backgroundImage: `url(${displayHero})` }}
-        >
-          <div className="absolute inset-0 bg-slate-950/85 mix-blend-multiply"></div>
-        </div>
+      {activeSections.hero && (
+        <section className="relative overflow-hidden min-h-[600px] flex items-center">
+          <div className="absolute inset-0 bg-cover bg-center transition-all duration-500" style={{ backgroundImage: `url(${displayHero})` }}>
+            <div className="absolute inset-0 bg-slate-950 mix-blend-multiply transition-opacity duration-300" style={{ opacity: overlayOpacity }}></div>
+          </div>
 
-        {/* Your Original Hero Content */}
-        <div className="relative z-10 px-8 py-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="relative z-10 px-8 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
+            <div className="flex flex-col gap-6">
+              <div className={`inline-flex items-center gap-2 ${c.lightBg} border ${c.border} border-opacity-30 px-3.5 py-1.5 rounded-full ${c.text} text-xs font-bold w-max backdrop-blur-sm`}>
+                <ShieldCheck className="w-4 h-4" /> LICENSED & VERIFIED LOCAL SPECIALISTS
+              </div>
+              <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.1]">
+                PROFESSIONAL SERVICES ACROSS <span className={c.text}>{suburb.toUpperCase()}</span>
+              </h1>
+              <p className="text-slate-200 text-base max-w-lg drop-shadow-md">
+                Fast response times, upfront transparent pricing, and expert maintenance handled by your trusted local team in {suburb}, {city}.
+              </p>
+              
+              <div className="flex flex-wrap gap-4 pt-2">
+                <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold py-4 px-8 rounded-2xl text-sm transition shadow-xl flex items-center gap-3`}>
+                  Get a Free Quote
+                </a>
+                <a href={`tel:${phone}`} className="bg-slate-900/80 backdrop-blur-md hover:bg-slate-800 border border-slate-700 text-white font-bold py-4 px-8 rounded-2xl text-sm transition flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-emerald-400" /> Call {phone}
+                </a>
+              </div>
+            </div>
+
+            {/* LIVE SERVICE REQUEST TOGGLE APPLIED HERE */}
+            {activeSections.liveRequest && (
+              <div className="relative hidden lg:block">
+                <div className={`absolute -inset-1 bg-gradient-to-r from-slate-500 to-slate-400 rounded-3xl blur-xl opacity-20 animate-pulse`}></div>
+                <div className="relative bg-slate-900/90 backdrop-blur-sm border border-slate-800 p-8 rounded-3xl flex flex-col gap-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <span className="font-bold text-sm text-white">Live Service Request</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+                      ⚡ Average dispatch time in <span className="text-white font-bold">{suburb}</span>: <span className="text-emerald-400 font-bold">28 minutes</span>
+                    </div>
+                  </div>
+                  <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 py-3.5 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2">
+                    <MessageCircle className="w-4 h-4" /> Instant Chat on WhatsApp
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 3. SERVICES */}
+      {activeSections.services && (
+        <section id="services" className={`py-20 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>{headers.services.sub}</h2>
+            <h3 className={`text-3xl font-black ${textMain} tracking-tight`}>{headers.services.main}</h3>
+            <p className={`${textMuted} text-sm mt-2`}>{headers.services.desc}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {servicesList.map((service) => (
+              <div key={service.id} className={`${bgCard} border ${borderMuted} hover:${c.border} rounded-3xl overflow-hidden transition flex flex-col group`}>
+                {service.image ? (
+                  <div className="h-48 w-full"><img src={service.image} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                ) : (
+                  <div className={`h-32 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center border-b ${borderMuted}`}>
+                    <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text} group-hover:${c.bg} group-hover:text-white transition`}>
+                      <Wrench className="w-5 h-5" />
+                    </div>
+                  </div>
+                )}
+                <div className="p-8 flex flex-col gap-3 flex-1">
+                  <h4 className={`text-lg font-bold ${textMain}`}>{service.title}</h4>
+                  <p className={`${textMuted} text-xs leading-relaxed`}>{service.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 4. REVIEWS SECTION (NEW) */}
+      {activeSections.reviews && reviewsList.length > 0 && (
+        <section id="reviews" className={`py-20 px-8 max-w-7xl mx-auto border-t ${borderMuted} ${isDark ? 'bg-slate-900/30' : 'bg-slate-100/50'} rounded-3xl my-8`}>
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>{headers.reviews.sub}</h2>
+            <h3 className={`text-3xl font-black ${textMain} tracking-tight`}>{headers.reviews.main}</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {reviewsList.map((review) => (
+              <div key={review.id} className={`${bgCard} border ${borderMuted} p-8 rounded-2xl flex flex-col gap-4 shadow-sm`}>
+                <div className="flex gap-1 text-yellow-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-current' : 'text-slate-300 dark:text-slate-700'}`} />
+                  ))}
+                </div>
+                <p className={`${textMuted} text-sm italic flex-1`}>"{review.text}"</p>
+                <div className="flex items-center gap-3 mt-2 pt-4 border-t border-dashed border-slate-200 dark:border-slate-800">
+                  <div className={`w-8 h-8 rounded-full ${c.lightBg} ${c.text} flex items-center justify-center font-bold text-xs`}>{review.name.charAt(0)}</div>
+                  <span className={`font-bold ${textMain} text-sm`}>{review.name}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 5. CONTACT FOOTER WITH FULL ADDRESS */}
+      {activeSections.contact && (
+        <footer id="contact" className={`py-20 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-12`}>
           <div className="flex flex-col gap-6">
-            <div className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 px-3.5 py-1.5 rounded-full text-blue-400 text-xs font-bold w-max">
-              <ShieldCheck className="w-4 h-4" /> LICENSED & VERIFIED LOCAL SPECIALISTS
-            </div>
-            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.1]">
-              EMERGENCY PLUMBING & REPAIRS ACROSS <span className="text-blue-500">{suburb.toUpperCase()}</span>
-            </h1>
-            <p className="text-slate-300 text-base max-w-lg">
-              Fast response times, upfront transparent pricing, and 24/7 expert maintenance handled by your trusted local team in {suburb}.
-            </p>
-            
-            <div className="flex flex-wrap gap-4 pt-2">
-              <a 
-                href="#contact"
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl text-sm transition shadow-xl shadow-blue-600/30 flex items-center gap-3"
-              >
-                Get a Free Quote
-              </a>
-              <a 
-                href={`tel:${phone}`}
-                className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-bold py-4 px-8 rounded-2xl text-sm transition flex items-center gap-3"
-              >
-                <Phone className="w-4 h-4 text-emerald-400" /> Call {phone}
-              </a>
+            <div>
+              <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>GET IN TOUCH</h2>
+              <h3 className={`text-3xl font-black ${textMain} tracking-tight`}>Ready to Get Started?</h3>
+              <p className={`${textMuted} text-sm mt-2`}>Send us a message and we’ll get straight back to you.</p>
             </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-900/50 text-xs font-bold text-slate-400">
-              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Local Team</div>
-              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Clear Pricing</div>
-              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Fast Response</div>
-              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Tidy Work</div>
+            <div className={`flex flex-col gap-5 text-sm ${textMuted} mt-4`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full ${c.lightBg} flex items-center justify-center ${c.text}`}><Phone className="w-4 h-4" /></div>
+                <span>{phone}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full ${c.lightBg} flex items-center justify-center ${c.text}`}><Mail className="w-4 h-4" /></div>
+                <span>{email}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-full ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-4 h-4" /></div>
+                <span>{streetAddress}, {suburb}, {city}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              {socials.facebook && <a href={socials.facebook} className={`w-10 h-10 rounded-lg border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Facebook className="w-4 h-4" /></a>}
+              {socials.instagram && <a href={socials.instagram} className={`w-10 h-10 rounded-lg border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Instagram className="w-4 h-4" /></a>}
+              {socials.tiktok && <a href={socials.tiktok} className={`w-10 h-10 rounded-lg border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Video className="w-4 h-4" /></a>}
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
-            <div className="relative bg-slate-900 border border-slate-800 p-8 rounded-3xl flex flex-col gap-6 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <span className="font-bold text-sm text-white">Live Service Request</span>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <div className={`${bgCard} border ${borderMuted} p-8 rounded-3xl shadow-xl`}>
+            {submitted ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-8 rounded-2xl text-center flex flex-col items-center gap-3">
+                <CheckCircle className="w-10 h-10 text-emerald-500" />
+                <h4 className="text-lg font-bold text-emerald-500">Inquiry Sent Successfully!</h4>
+                <p className={`${textMuted} text-xs`}>Thank you. {businessName} has received your message.</p>
               </div>
-              <div className="space-y-3">
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                  ⚡ Average dispatch time in <span className="text-white font-bold">{suburb}</span>: <span className="text-emerald-400 font-bold">28 minutes</span>
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="flex flex-col gap-4">
+                <h4 className={`text-base font-bold ${textMain} mb-2`}>Send a Message</h4>
+                <input type="text" required value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Your Name" className={`w-full ${isDark ? 'bg-slate-950' : 'bg-slate-50'} border ${borderMuted} rounded-xl p-3 text-sm ${textMain} focus:outline-none focus:${c.border}`} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} placeholder="Email Address" className={`w-full ${isDark ? 'bg-slate-950' : 'bg-slate-50'} border ${borderMuted} rounded-xl p-3 text-sm ${textMain} focus:outline-none focus:${c.border}`} />
+                  <input type="tel" required value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} placeholder="Phone Number" className={`w-full ${isDark ? 'bg-slate-950' : 'bg-slate-50'} border ${borderMuted} rounded-xl p-3 text-sm ${textMain} focus:outline-none focus:${c.border}`} />
                 </div>
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                  🛠️ Fully equipped vans carrying 95% of common replacement parts on hand.
-                </div>
-              </div>
-              <a 
-                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 py-3.5 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" /> Instant Chat on WhatsApp
-              </a>
-            </div>
+                <textarea rows={3} required value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} placeholder="How can we help?" className={`w-full ${isDark ? 'bg-slate-950' : 'bg-slate-50'} border ${borderMuted} rounded-xl p-3 text-sm ${textMain} focus:outline-none focus:${c.border}`} />
+                <button type="submit" disabled={loading} className={`w-full ${c.bg} ${c.hover} text-white font-bold py-3.5 rounded-xl text-sm transition mt-2`}>
+                  {loading ? 'Sending...' : 'Send Message'}
+                </button>
+              </form>
+            )}
           </div>
-        </div>
-      </section>
-
-      {/* 3. SERVICES SECTION */}
-      <section id="services" className="py-20 px-8 max-w-7xl mx-auto border-t border-slate-900">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">OUR CAPABILITIES</h2>
-          <h3 className="text-3xl font-black text-white tracking-tight">What We Do</h3>
-          <p className="text-slate-400 text-sm mt-2">Comprehensive plumbing and maintenance services delivered right across {suburb}.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { title: 'Emergency Leak Detection', desc: 'Rapid diagnosis and repair of burst pipes, hidden leaks, and water damage prevention.' },
-            { title: 'Hot Water Systems', desc: 'Installation, repair, and servicing of gas, electric, and solar hot water units.' },
-            { title: 'Blocked Drains & Hydro Jetting', desc: 'High-pressure water jetting and CCTV camera inspections to clear stubborn blockages.' }
-          ].map((service, i) => (
-            <div key={i} className="bg-slate-900/60 border border-slate-800/80 hover:border-blue-500/50 p-8 rounded-3xl transition flex flex-col gap-4 group">
-              <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition">
-                <Wrench className="w-5 h-5" />
-              </div>
-              <h4 className="text-lg font-bold text-white">{service.title}</h4>
-              <p className="text-slate-400 text-xs leading-relaxed">{service.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 4. WHY CHOOSE US */}
-      <section id="why-us" className="py-20 px-8 max-w-7xl mx-auto border-t border-slate-900">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">REPUTATION & TRUST</h2>
-          <h3 className="text-3xl font-black text-white tracking-tight">Why Choose {businessName}</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { title: 'Local Team', desc: `Based nearby and on the road every day in ${suburb}.` },
-            { title: 'Clear Pricing', desc: 'Written fixed quotes provided before any work starts.' },
-            { title: 'Fast Response', desc: 'Same-day priority replies to every emergency enquiry.' },
-            { title: 'Tidy Work', desc: 'We always clean up our workspace completely when finished.' }
-          ].map((item, i) => (
-            <div key={i} className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl flex flex-col gap-2">
-              <h4 className="font-bold text-white text-sm">{item.title}</h4>
-              <p className="text-slate-400 text-xs">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. RECENT PROJECTS GALLERY */}
-      <section id="projects" className="py-20 px-8 max-w-7xl mx-auto border-t border-slate-900">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">PORTFOLIO</h2>
-          <h3 className="text-3xl font-black text-white tracking-tight">Recent Projects</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((p) => (
-            <div key={p} className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col group">
-              <div className="h-48 bg-slate-950 flex items-center justify-center text-slate-700 font-bold text-sm group-hover:scale-105 transition duration-500">
-                Project Showcase #{p}
-              </div>
-              <div className="p-6 flex flex-col gap-2">
-                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">{suburb} Residential</span>
-                <h4 className="font-bold text-white text-base">Complete System Overhaul & Compliance</h4>
-                <p className="text-xs text-slate-400">Upgraded outdated infrastructure with modern high-efficiency plumbing fixtures.</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 6. AREAS WE SERVE */}
-      <section id="areas" className="py-20 px-8 max-w-7xl mx-auto border-t border-slate-900">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">COVERAGE</h2>
-          <h3 className="text-3xl font-black text-white tracking-tight">Areas We Serve</h3>
-        </div>
-        <div className="flex flex-wrap justify-center gap-3">
-          {[suburb, 'City Centre', 'Northside', 'Eastern Suburbs', 'Southside', 'Bayside Region'].map((area, i) => (
-            <div key={i} className="bg-slate-900 border border-slate-800 px-5 py-2.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-blue-500" /> {area}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 7. FREQUENTLY ASKED QUESTIONS */}
-      <section id="faq" className="py-20 px-8 max-w-4xl mx-auto border-t border-slate-900">
-        <div className="text-center mb-16">
-          <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">SUPPORT</h2>
-          <h3 className="text-3xl font-black text-white tracking-tight">Frequently Asked Questions</h3>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {[
-            { q: 'Do you provide free quotes?', a: 'Yes, we provide transparent, written quotes with zero hidden fees before starting any work.' },
-            { q: 'How quickly can you arrive for an emergency?', a: 'Our local technicians are dispatched immediately and typically arrive within 30 to 45 minutes.' },
-            { q: 'Are your plumbers fully licensed and insured?', a: 'All team members carry full trade licenses, police checks, and comprehensive public liability insurance.' }
-          ].map((faq, i) => (
-            <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-              <button 
-                onClick={() => toggleFaq(i)}
-                className="w-full p-6 text-left font-bold text-sm text-white flex justify-between items-center hover:bg-slate-850 transition"
-              >
-                {faq.q}
-                {openFaq === i ? <ChevronUp className="w-4 h-4 text-blue-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-              </button>
-              {openFaq === i && (
-                <div className="px-6 pb-6 text-xs text-slate-300 leading-relaxed border-t border-slate-800/50 pt-4">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 8. GET IN TOUCH FOOTER */}
-      <footer id="contact" className="py-20 px-8 max-w-7xl mx-auto border-t border-slate-900 grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div className="flex flex-col gap-6">
-          <div>
-            <h2 className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">GET IN TOUCH</h2>
-            <h3 className="text-3xl font-black text-white tracking-tight">Ready to Get Started?</h3>
-            <p className="text-slate-400 text-sm mt-2">Send us a message and we’ll get straight back to you.</p>
-          </div>
-
-          <div className="flex flex-col gap-4 text-sm text-slate-300">
-            <div className="flex items-center gap-3">
-              <Phone className="w-4 h-4 text-blue-500" />
-              <span>{phone}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-4 h-4 text-blue-500" />
-              <span>support@{businessName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.au</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <Clock className="w-4 h-4 text-blue-500" />
-              <span>Mon - Fri: 7:00am – 5:00pm (24/7 Emergency Dispatch)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl">
-          {submitted ? (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-8 rounded-2xl text-center flex flex-col items-center gap-3">
-              <CheckCircle className="w-10 h-10 text-emerald-400" />
-              <h4 className="text-lg font-bold text-emerald-400">Inquiry Sent Successfully!</h4>
-              <p className="text-slate-300 text-xs">Thank you. {businessName} has received your message and will contact you shortly.</p>
-            </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="flex flex-col gap-4">
-              <h4 className="text-base font-bold text-white mb-2">Send a Message</h4>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">Your Name</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={leadName} 
-                  onChange={(e) => setLeadName(e.target.value)} 
-                  placeholder="John Smith" 
-                  className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500" 
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase">Email</label>
-                  <input 
-                    type="email" 
-                    value={leadEmail} 
-                    onChange={(e) => setLeadEmail(e.target.value)} 
-                    placeholder="john@example.com" 
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500" 
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                  <input 
-                    type="tel" 
-                    required 
-                    value={leadPhone} 
-                    onChange={(e) => setLeadPhone(e.target.value)} 
-                    placeholder="0400 000 000" 
-                    className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500" 
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase">How can we help?</label>
-                <textarea 
-                  rows={3} 
-                  required 
-                  value={leadMessage} 
-                  onChange={(e) => setLeadMessage(e.target.value)} 
-                  placeholder="Describe your project or emergency..." 
-                  className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500" 
-                />
-              </div>
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs transition shadow-lg shadow-blue-600/20 mt-2"
-              >
-                {loading ? 'Sending Message...' : 'Send Message'}
-              </button>
-            </form>
-          )}
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

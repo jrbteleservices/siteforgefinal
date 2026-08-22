@@ -4,6 +4,9 @@ import RoofingTemplate from './components/themes/Roofing';
 import ElectricianTemplate from './components/themes/Electrician';
 import HvacTemplate from './components/themes/Hvac';
 import BpoTemplate from './components/themes/Bpo';
+import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate'; // NEW IMPORT
+import { AUSTRALIAN_THEMES } from './constants/industryConfigs'; // NEW IMPORT
+
 import LeadsView from './components/dashboard/LeadsView';
 import DomainsView from './components/dashboard/DomainsView';
 import SubscriptionsView from './components/dashboard/SubscriptionsView';
@@ -19,35 +22,11 @@ import { exportToHtml } from './utils/exporter';
 import { generateAiContent } from './utils/ai';
 import { supabase } from './supabase';
 
-interface ClientProfile {
-  id: string;
-  businessName: string;
-  phone: string;
-  suburb: string;
-  theme: string;
-  designConcept?: string;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: string;
-}
-
-interface ServiceItem {
-  id: string;
-  title: string;
-  desc: string;
-  image?: string;
-}
-
-interface ProjectItem {
-  id: string;
-  subtitle: string;
-  title: string;
-  desc: string;
-  image?: string;
-}
+interface ClientProfile { id: string; businessName: string; phone: string; suburb: string; theme: string; }
+interface Product { id: string; name: string; price: string; }
+interface ServiceItem { id: string; title: string; desc: string; image?: string; }
+interface ProjectItem { id: string; subtitle: string; title: string; desc: string; image?: string; }
+interface ReviewItem { id: string; name: string; rating: number; text: string; }
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -56,7 +35,6 @@ export default function App() {
   // --- NAVIGATION STATE ---
   const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('dashboard');
   const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
-  const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
   // --- BUILDER / EDITOR STATE ---
   const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce'>('content');
@@ -64,7 +42,14 @@ export default function App() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // Media & Uploads
+  // New Content State
+  const [colorPalette, setColorPalette] = useState('blue');
+  const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
+  const [city, setCity] = useState('Melbourne');
+  const [email, setEmail] = useState('contact@apex.com.au');
+  const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
+
+  // Media
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   const [heroImage, setHeroImage] = useState<string | null>(null);
@@ -73,39 +58,36 @@ export default function App() {
   // Layout & Commerce
   const [activeSections, setActiveSections] = useState({
     hero: true,
+    liveRequest: true,
     services: true,
     whyUs: true,
     projects: true,
+    reviews: true,
     products: true,
     faq: true,
     contact: true
   });
-  const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Standard Service Call', price: '99' }
-  ]);
+  const [products, setProducts] = useState<Product[]>([{ id: '1', name: 'Standard Service Call', price: '99' }]);
 
   // Headers State
   const [headers, setHeaders] = useState({
     services: { sub: 'OUR CAPABILITIES', main: 'What We Do', desc: 'Comprehensive property and maintenance services.' },
     whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
-    projects: { sub: 'PORTFOLIO', main: 'Recent Projects' }
+    projects: { sub: 'PORTFOLIO', main: 'Recent Projects' },
+    reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
 
   // Dynamic Arrays
-  const [servicesList, setServicesList] = useState<ServiceItem[]>([
-    { id: '1', title: 'Emergency Service', desc: 'Rapid diagnosis and repair of faults and damage.' },
-    { id: '2', title: 'Complete Installations', desc: 'High-quality equipment setup and full system compliance.' },
-    { id: '3', title: 'Routine Maintenance', desc: 'Preventative servicing to ensure maximum efficiency.' }
-  ]);
-
-  const [projectsList, setProjectsList] = useState<ProjectItem[]>([
-    { id: '1', subtitle: 'Residential', title: 'Home System Upgrade', desc: 'Complete overhaul of outdated infrastructure with modern fixtures.' },
-    { id: '2', subtitle: 'Commercial', title: 'Enterprise Fit-out', desc: 'Full installation ensuring health and safety code compliance.' }
+  const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
+  const [reviewsList, setReviewsList] = useState<ReviewItem[]>([
+    { id: '1', name: 'Sarah Jenkins', rating: 5, text: 'Absolutely fantastic service. Arrived on time and fixed the issue perfectly. Highly recommended!' },
+    { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
   ]);
 
   // --- PROFILES & CONTENT STATE ---
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing', designConcept: 'conversion' }
+    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
@@ -113,104 +95,88 @@ export default function App() {
   const [phone, setPhone] = useState(activeProfile.phone);
   const [suburb, setSuburb] = useState(activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(activeProfile.theme);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setCheckingAuth(false);
-    });
+    supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setCheckingAuth(false); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleAiCopy = async () => {
-    setIsGenerating(true);
-    const newHeadline = await generateAiContent(selectedTheme, suburb, 'headline');
-    setBusinessName(newHeadline);
-    setIsGenerating(false);
-  };
-
-  // --- SUPABASE STORAGE LOGIC ---
   const uploadImageToSupabase = async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('site-assets')
-      .upload(filePath, file, { cacheControl: '3600', upsert: false });
-
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      alert('Upload failed: ' + uploadError.message);
-      return null;
-    }
-
-    const { data } = supabase.storage.from('site-assets').getPublicUrl(filePath);
-    return data.publicUrl;
+    const { error } = await supabase.storage.from('site-assets').upload(filePath, file, { cacheControl: '3600', upsert: false });
+    if (error) { alert('Upload failed: ' + error.message); return null; }
+    return supabase.storage.from('site-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string | null>>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setIsUploading(true);
-    const publicUrl = await uploadImageToSupabase(file);
-    if (publicUrl) setter(publicUrl);
-    setIsUploading(false);
+    const file = e.target.files?.[0]; if (!file) return;
+    setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  const handleArrayImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, id: string, type: 'service' | 'project') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handlePublish = () => { setIsPublishing(true); setTimeout(() => { setIsPublishing(false); alert('Successfully published to edge network!'); }, 1200); };
 
-    setIsUploading(true);
-    const publicUrl = await uploadImageToSupabase(file);
-    if (publicUrl) {
-      if (type === 'service') {
-        setServicesList(servicesList.map(s => s.id === id ? { ...s, image: publicUrl } : s));
-      } else {
-        setProjectsList(projectsList.map(p => p.id === id ? { ...p, image: publicUrl } : p));
-      }
-    }
-    setIsUploading(false);
-  };
-
-  const handlePublish = () => {
-    setIsPublishing(true);
-    setTimeout(() => {
-      setIsPublishing(false);
-      alert('SiteForge Engine: Changes successfully published to the live edge network!');
-    }, 1200);
-  };
-
-  if (checkingAuth) return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
+  if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
   if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
+
+  const DashboardNavItem = ({ id, label }: { id: string, label: string }) => (
+    <button onClick={() => setDashboardView(id as any)} className={`w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${dashboardView === id ? 'bg-blue-600/15 text-blue-500' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}>
+      {label}
+    </button>
+  );
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
       
+      {/* FULLY RESTORED DASHBOARD */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
            <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
             <div className="p-6 border-b border-slate-800">
-              <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm">Launch Builder</button>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">SF</div>
+                <span className="font-bold text-lg tracking-tight text-white">SiteForge</span>
+              </div>
+              <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Launch Builder</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
-              <button onClick={() => setDashboardView('leads')} className="text-left px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-800">Lead Pipeline</button>
+              <DashboardNavItem id="leads" label="Lead Pipeline" />
+              <DashboardNavItem id="routing" label="Lead Routing Rules" />
+              <DashboardNavItem id="domains" label="Domain Manager" />
+              <DashboardNavItem id="portal" label="Client Portal" />
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-6">System & Config</div>
+              <DashboardNavItem id="analytics" label="Platform Analytics" />
+              <DashboardNavItem id="billing" label="Subscriptions & Billing" />
+              <DashboardNavItem id="emails" label="Email Templates" />
+              <DashboardNavItem id="webhooks" label="Webhooks & APIs" />
+              <DashboardNavItem id="support" label="Support Tickets" />
             </div>
             <div className="p-4 border-t border-slate-800">
-              <button onClick={() => supabase.auth.signOut()} className="text-red-400 text-sm font-bold w-full text-left px-4">Sign Out</button>
+              <button onClick={() => supabase.auth.signOut()} className="text-red-400 text-sm font-bold w-full text-left px-4 hover:text-red-300">Sign Out</button>
             </div>
           </div>
           <div className="flex-1 flex flex-col bg-slate-950">
-            <header className="h-16 border-b border-slate-800 bg-slate-900/40 flex items-center px-8 capitalize font-bold text-white tracking-tight text-xl">{dashboardView}</header>
-            <main className="flex-1 overflow-y-auto p-8"><LeadsView /></main>
+            <header className="h-16 border-b border-slate-800 bg-slate-900/40 flex items-center px-8 capitalize font-bold text-white tracking-tight text-xl">{dashboardView.replace('-', ' ')}</header>
+            <main className="flex-1 overflow-y-auto p-8">
+              <div className="max-w-7xl mx-auto h-full">
+                {dashboardView === 'leads' && <LeadsView />}
+                {dashboardView === 'routing' && <RoutingView />}
+                {dashboardView === 'domains' && <DomainsView />}
+                {dashboardView === 'billing' && <SubscriptionsView />}
+                {dashboardView === 'analytics' && <AnalyticsView />}
+                {dashboardView === 'portal' && <ClientPortalView />}
+                {dashboardView === 'emails' && <EmailTemplatesView />}
+                {dashboardView === 'support' && <SupportView />}
+                {dashboardView === 'webhooks' && <WebhooksView />}
+              </div>
+            </main>
           </div>
         </div>
       )}
 
+      {/* THE ADVANCED BUILDER */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
           
@@ -218,15 +184,10 @@ export default function App() {
             <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
               <div className="flex items-center gap-4">
                 <button onClick={() => setActivePage('dashboard')} className="text-slate-400 hover:text-white transition text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-800">&larr; Dashboard</button>
-                <span className="text-sm font-bold text-white flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName}
-                </span>
+                <span className="text-sm font-bold text-white flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName}</span>
               </div>
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} 
-                  className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2"
-                >
+                <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2">
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
@@ -242,7 +203,6 @@ export default function App() {
             {!isPreviewMode && (
               <div className="w-[420px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
                 
-                {/* GLOBAL UPLOAD OVERLAY */}
                 {isUploading && (
                   <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4">
@@ -262,93 +222,149 @@ export default function App() {
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   
+                  {/* EXPANDED CONTENT TAB (NOW 14 THEMES!) */}
                   {editorTab === 'content' && (
-                    <div className="space-y-4 animate-in fade-in">
+                    <div className="space-y-5 animate-in fade-in">
                       <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Theme</label>
-                        <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white">
-                          <option value="roofing">Roofing & Restorations</option>
-                          <option value="plumbing">Plumbing & Emergency</option>
-                          <option value="electrician">Electrical Contracting</option>
-                          <option value="hvac">HVAC & Climate Control</option>
-                          <option value="bpo">BPO & Call Center Services</option>
-                        </select>
+                      
+                      <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Industry Theme</label>
+                          <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                            {/* Original 5 Hardcoded */}
+                            <optgroup label="Core Trades">
+                              <option value="plumbing">Plumbing & Emergency</option>
+                              <option value="roofing">Roofing & Restorations</option>
+                              <option value="electrician">Electrical Contracting</option>
+                              <option value="hvac">HVAC & Climate Control</option>
+                            </optgroup>
+                            <optgroup label="Corporate">
+                              <option value="bpo">BPO & Call Center Services</option>
+                            </optgroup>
+                            {/* New Dynamic Premium Themes */}
+                            <optgroup label="Premium Verticals">
+                              {Object.values(AUSTRALIAN_THEMES).map(theme => (
+                                <option key={theme.id} value={theme.id}>{theme.name}</option>
+                              ))}
+                            </optgroup>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Color Palette</label>
+                          <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                            <option value="blue">Blue (Default)</option>
+                            <option value="emerald">Emerald Green</option>
+                            <option value="rose">Ruby Rose</option>
+                            <option value="amber">Amber Orange</option>
+                            <option value="violet">Deep Violet</option>
+                            <option value="cyan">Sky Cyan</option>
+                          </select>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Business Name</label>
-                        <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
+
+                      <div className="space-y-3">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Core Business Info</h4>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Name</label>
+                          <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</label>
+                            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Email</label>
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
+
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Location Data</h4>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
+                          <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Suburb</label>
+                            <input type="text" value={suburb} onChange={(e) => setSuburb(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-400 uppercase">Target Suburb / City</label>
-                        <input type="text" value={suburb} onChange={(e) => setSuburb(e.target.value)} className="mt-1.5 w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm text-white" />
+
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links</h4>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instagram URL</label>
+                          <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TikTok URL</label>
+                          <input type="text" value={socials.tiktok} onChange={(e) => setSocials({...socials, tiktok: e.target.value})} placeholder="https://tiktok.com/@..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook URL</label>
+                          <input type="text" value={socials.facebook} onChange={(e) => setSocials({...socials, facebook: e.target.value})} placeholder="https://facebook.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        </div>
                       </div>
                     </div>
                   )}
 
+                  {/* SECTIONS TAB */}
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
+                      
                       <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2">
-                          <h3 className="font-bold text-white">What We Do (Services)</h3>
-                        </div>
-                        <input type="text" placeholder="Sub-header" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        <input type="text" placeholder="Main Header" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Services Section</h3></div>
+                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
                         <div className="space-y-3 mt-4">
                           {servicesList.map((service, index) => (
-                            <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                            <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => setServicesList(servicesList.filter(s => s.id !== service.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={service.title} onChange={(e) => { const n = [...servicesList]; n[index].title = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Service Title" />
-                              <textarea value={service.desc} onChange={(e) => { const n = [...servicesList]; n[index].desc = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Description" rows={2} />
-                              
-                              <div className="flex items-center gap-3">
-                                {service.image && <img src={service.image} className="w-10 h-10 rounded object-cover" />}
-                                <label className="text-xs font-bold text-blue-400 cursor-pointer hover:text-blue-300">
-                                  + Upload Image
-                                  <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleArrayImageUpload(e, service.id, 'service')} />
-                                </label>
-                              </div>
+                              <input type="text" value={service.title} onChange={(e) => { const n = [...servicesList]; n[index].title = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" />
+                              <textarea value={service.desc} onChange={(e) => { const n = [...servicesList]; n[index].desc = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} />
                             </div>
                           ))}
-                          <button onClick={() => setServicesList([...servicesList, { id: Date.now().toString(), title: 'New Service', desc: 'Description here...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900 transition">+ Add Service</button>
+                          <button onClick={() => setServicesList([...servicesList, { id: Date.now().toString(), title: 'New Service', desc: 'Description here...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900">+ Add Service Customization</button>
+                          <p className="text-[10px] text-slate-500 text-center">Note: Premium Templates will auto-fill industry defaults if left blank.</p>
                         </div>
                       </div>
 
                       <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2">
-                          <h3 className="font-bold text-white">Recent Projects</h3>
-                        </div>
-                        <input type="text" placeholder="Sub-header" value={headers.projects.sub} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        <input type="text" placeholder="Main Header" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Client Reviews</h3></div>
+                        <input type="text" value={headers.reviews.sub} onChange={(e) => setHeaders({...headers, reviews: {...headers.reviews, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                        <input type="text" value={headers.reviews.main} onChange={(e) => setHeaders({...headers, reviews: {...headers.reviews, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
                         
                         <div className="space-y-3 mt-4">
-                          {projectsList.map((proj, index) => (
-                            <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
-                              <button onClick={() => setProjectsList(projectsList.filter(p => p.id !== proj.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={proj.subtitle} onChange={(e) => { const n = [...projectsList]; n[index].subtitle = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-blue-400 font-bold uppercase" placeholder="Subtitle (e.g. St Kilda)" />
-                              <input type="text" value={proj.title} onChange={(e) => { const n = [...projectsList]; n[index].title = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Project Title" />
-                              <textarea value={proj.desc} onChange={(e) => { const n = [...projectsList]; n[index].desc = e.target.value; setProjectsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Description" rows={2} />
-                              
-                              <div className="flex items-center gap-3">
-                                {proj.image && <img src={proj.image} className="w-10 h-10 rounded object-cover" />}
-                                <label className="text-xs font-bold text-blue-400 cursor-pointer hover:text-blue-300">
-                                  + Upload Background Image
-                                  <input type="file" accept="image/*" className="hidden" disabled={isUploading} onChange={(e) => handleArrayImageUpload(e, proj.id, 'project')} />
-                                </label>
+                          {reviewsList.map((review, index) => (
+                            <div key={review.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                              <button onClick={() => setReviewsList(reviewsList.filter(r => r.id !== review.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              <div className="flex gap-2">
+                                <input type="text" value={review.name} onChange={(e) => { const n = [...reviewsList]; n[index].name = e.target.value; setReviewsList(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Client Name" />
+                                <select value={review.rating} onChange={(e) => { const n = [...reviewsList]; n[index].rating = Number(e.target.value); setReviewsList(n); }} className="w-16 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                                  <option value={5}>5 ★</option>
+                                  <option value={4}>4 ★</option>
+                                  <option value={3}>3 ★</option>
+                                </select>
                               </div>
+                              <textarea value={review.text} onChange={(e) => { const n = [...reviewsList]; n[index].text = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Review text..." />
                             </div>
                           ))}
-                          <button onClick={() => setProjectsList([...projectsList, { id: Date.now().toString(), subtitle: 'Location', title: 'New Project', desc: 'Description...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900 transition">+ Add Project</button>
+                          <button onClick={() => setReviewsList([...reviewsList, { id: Date.now().toString(), name: 'New Client', rating: 5, text: 'Great service!' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900">+ Add Review</button>
                         </div>
                       </div>
+
                     </div>
                   )}
 
+                  {/* MEDIA TAB */}
                   {editorTab === 'media' && (
                     <div className="space-y-6 animate-in fade-in">
                       <div className="space-y-2">
@@ -377,23 +393,35 @@ export default function App() {
                     </div>
                   )}
 
+                  {/* LAYOUT TAB */}
                   {editorTab === 'layout' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <p className="text-xs text-slate-400 mb-4">Toggle sections on or off for this website.</p>
-                      {Object.entries(activeSections).map(([key, isVisible]) => (
+                      <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules.</p>
+                      
+                      <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-blue-500/30">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">Live Service Request</span>
+                          <span className="text-[10px] text-slate-400">WhatsApp / Dispatch Box in Hero</span>
+                        </div>
+                        <button onClick={() => setActiveSections({ ...activeSections, liveRequest: !activeSections.liveRequest })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.liveRequest ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.liveRequest ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
+                      {['hero', 'services', 'whyUs', 'projects', 'reviews', 'products', 'faq'].map((key) => (
                         <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                          <span className="text-sm font-medium text-white capitalize">{key} Section</span>
-                          <button onClick={() => setActiveSections({ ...activeSections, [key]: !isVisible })} className={`w-10 h-6 rounded-full p-1 transition-colors ${isVisible ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isVisible ? 'translate-x-4' : 'translate-x-0'}`} />
+                          <span className="text-sm font-medium text-white capitalize">{key.replace(/([A-Z])/g, ' $1')} Section</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, [key as keyof typeof activeSections]: !activeSections[key as keyof typeof activeSections] })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections[key as keyof typeof activeSections] ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections[key as keyof typeof activeSections] ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
 
+                  {/* COMMERCE TAB */}
                   {editorTab === 'commerce' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <p className="text-xs text-slate-400 mb-2">Manage products, services, or booking options.</p>
                       {!activeSections.products && (
                          <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-400 text-xs font-bold mb-4">
                            ⚠️ The Products section is currently disabled in the Layout tab.
@@ -406,10 +434,10 @@ export default function App() {
                         {products.map((product, index) => (
                           <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
                             <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Product Name" />
+                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" />
                             <div className="flex gap-2 items-center">
                               <span className="text-slate-400 text-sm">$</span>
-                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="0.00" />
+                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" />
                             </div>
                           </div>
                         ))}
@@ -420,6 +448,7 @@ export default function App() {
               </div>
             )}
 
+            {/* FULLSCREEN OVERLAYS */}
             {isPreviewMode && (
               <div className="absolute top-6 left-6 z-50 flex gap-3">
                 <button onClick={() => setIsPreviewMode(false)} className="bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white shadow-2xl px-6 py-3 rounded-full font-black text-sm hover:bg-slate-800 transition flex items-center gap-2">
@@ -431,6 +460,7 @@ export default function App() {
               </div>
             )}
 
+            {/* LIVE PREVIEW CANVAS */}
             <div className={`flex-1 bg-slate-800 transition-all ${isPreviewMode ? 'p-0' : 'p-8'} overflow-y-auto flex justify-center items-start`}>
               <div className={`w-full bg-white shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all ${isPreviewMode ? 'max-w-none min-h-screen rounded-none' : 'max-w-[1200px] min-h-[800px] rounded-xl'}`}>
                 
@@ -446,24 +476,29 @@ export default function App() {
                 )}
 
                 <div className="relative">
-                  {!activeSections.hero && <div className="absolute top-0 w-full p-2 bg-red-500 text-white text-center text-xs font-bold z-50">Hero Section Disabled</div>}
-                  
+                  {/* ENGINE ROUTER - The magic happens here! */}
                   {(() => {
                     const templateProps = {
-                      businessName, phone, suburb, 
+                      businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
                       logo: siteLogo, heroImage, heroOpacity, 
-                      headers, servicesList, projectsList, 
+                      headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode
                     };
 
                     return (
                       <>
+                        {/* 1. ORIGINAL 5 TEMPLATES */}
                         {selectedTheme === 'plumbing' && <PlumbingTemplate {...templateProps as any} />}
                         {selectedTheme === 'roofing' && <RoofingTemplate {...templateProps as any} />}
                         {selectedTheme === 'electrician' && <ElectricianTemplate {...templateProps as any} />}
                         {selectedTheme === 'hvac' && <HvacTemplate {...templateProps as any} />}
                         {selectedTheme === 'bpo' && <BpoTemplate {...templateProps as any} />}
+
+                        {/* 2. THE NEW 9 MASTER-TEMPLATE VERTICALS */}
+                        {AUSTRALIAN_THEMES[selectedTheme] && (
+                          <MasterPremiumTemplate config={AUSTRALIAN_THEMES[selectedTheme]} {...templateProps as any} />
+                        )}
                       </>
                     );
                   })()}
@@ -474,7 +509,6 @@ export default function App() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
