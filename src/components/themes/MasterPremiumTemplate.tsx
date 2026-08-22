@@ -1,13 +1,12 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Globe, Share2, Star, Video, ArrowRight, Activity, ShieldCheck, Award, Users } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Globe, Share2, Star, Video, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { IndustryConfig, ServiceItem, ProjectItem } from '../../constants/industryConfigs';
+import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
 interface ReviewItem { id: string; name: string; rating: number; text: string; }
-interface Product { id: string; name: string; price: string; }
-interface TeamMember { id: string; name: string; role: string; image?: string; }
+interface FaqItem { id: string; question: string; answer: string; }
 
 interface MasterTemplateProps {
   config: IndustryConfig;
@@ -15,13 +14,14 @@ interface MasterTemplateProps {
   socials: { facebook: string; instagram: string; tiktok: string; };
   colorPalette: string; logo?: string | null; heroImage?: string | null; heroOpacity: number;
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
-  showProducts: boolean; products: Product[]; activeSections: any; themeMode: 'light' | 'dark';
+  showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
+  teamList?: TeamMemberItem[]; faqList?: FaqItem[];
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
-  showProducts, products, activeSections, themeMode 
+  showProducts, products, activeSections, themeMode, teamList = [], faqList = []
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -31,19 +31,20 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fallbacks & smart defaults
   const displayHero = heroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
 
+  // Smart defaults if arrays are empty
   const activeServices = servicesList.length > 0 ? servicesList : config.servicesDefault;
   const activeProjects = projectsList.length > 0 ? projectsList : config.projectsDefault;
+  const activeProducts = products.length > 0 ? products : config.productsDefault;
+  const activeTeam = teamList.length > 0 ? teamList : config.teamDefault;
 
-  // Default team members if none provided
-  const defaultTeam: TeamMember[] = [
-    { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80' },
-    { id: 't2', name: 'Victoria Vance', role: 'Head of Client Operations', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80' },
-    { id: 't3', name: 'Marcus Thorne', role: 'Principal Technical Director', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' }
+  const defaultFaqs: FaqItem[] = [
+    { id: 'f1', question: `What areas do you service across ${city}?`, answer: `We provide direct coverage across metropolitan ${city}, ${suburb}, and surrounding regional hubs.` },
+    { id: 'f2', question: 'How quickly can we initiate a project consultation?', answer: 'Our managing partners typically respond to priority inquiries within 2 hours.' }
   ];
+  const activeFaqs = faqList.length > 0 ? faqList : defaultFaqs;
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -80,7 +81,7 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300`}>
       
-      {/* HEADER / NAVIGATION */}
+      {/* HEADER / NAVIGATION WITH LOGO HOME LINK */}
       <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -98,7 +99,7 @@ export default function MasterPremiumTemplate({
           {activeSections.whyUs && <a href="#whyUs" className={`hover:${c.text} transition`}>Why Us</a>}
           {activeSections.projects && <a href="#projects" className={`hover:${c.text} transition`}>Portfolio</a>}
           {activeSections.reviews && <a href="#reviews" className={`hover:${c.text} transition`}>Testimonials</a>}
-          {showProducts && <a href="#products" className={`hover:${c.text} transition`}>Services</a>}
+          {showProducts && activeSections.products && <a href="#products" className={`hover:${c.text} transition`}>Services & Packages</a>}
           <a href="#team" className={`hover:${c.text} transition`}>Our Team</a>
         </nav>
 
@@ -173,7 +174,7 @@ export default function MasterPremiumTemplate({
             {activeServices.map((service) => (
               <div key={service.id} className={`${bgCard} border ${borderMuted} hover:${c.border} shadow-sm hover:shadow-xl rounded-2xl overflow-hidden transition-all flex flex-col group`}>
                 {service.image ? (
-                  <div className="h-56 w-full"><img src={service.image} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                  <div className="h-56 w-full"><img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
                 ) : (
                   <div className={`h-40 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center border-b ${borderMuted}`}>
                     <ArrowRight className={`w-10 h-10 ${textMuted} group-hover:${c.text} transition group-hover:translate-x-2`} />
@@ -229,7 +230,7 @@ export default function MasterPremiumTemplate({
                 {proj.image ? (
                   <div className="h-80 w-full relative">
                     <div className="absolute inset-0 bg-slate-900/40 z-10 group-hover:bg-slate-900/20 transition duration-500"></div>
-                    <img src={proj.image} className="w-full h-full object-cover relative z-0" />
+                    <img src={proj.image} alt={proj.title} className="w-full h-full object-cover relative z-0" />
                   </div>
                 ) : (
                   <div className={`h-80 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm`}>Media Showcase</div>
@@ -266,23 +267,38 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PRODUCTS / FIXED-PRICE SERVICES SECTION */}
-      {showProducts && activeSections.products && products.length > 0 && (
+      {/* PRODUCTS / FIXED-PRICE PACKAGES WITH IMAGE UPLOADS & PAYMENT GATEWAY LINKS */}
+      {showProducts && activeSections.products && activeProducts.length > 0 && (
         <section id="products" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>FIXED RATE OPTIONS</h2>
-            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Service Packages</h3>
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>FIXED RATE SERVICES</h2>
+            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Service Packages & Checkout</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {products.map((prod) => (
-              <div key={prod.id} className={`${bgCard} border ${borderMuted} p-8 rounded-3xl shadow-sm flex flex-col justify-between gap-6`}>
-                <div>
-                  <h4 className={`text-xl font-bold ${textMain}`}>{prod.name}</h4>
-                  <div className={`text-4xl font-black ${c.text} mt-4`}>${prod.price}</div>
+            {activeProducts.map((prod) => (
+              <div key={prod.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between group`}>
+                {prod.image ? (
+                  <div className="h-48 w-full overflow-hidden">
+                    <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  </div>
+                ) : (
+                  <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold`}>Package Image</div>
+                )}
+                <div className="p-8 flex flex-col justify-between flex-1 gap-6">
+                  <div>
+                    <h4 className={`text-xl font-bold ${textMain}`}>{prod.name}</h4>
+                    <div className={`text-3xl font-black ${c.text} mt-2`}>${prod.price}</div>
+                  </div>
+                  <a 
+                    href={prod.checkoutUrl || '#contact'} 
+                    target={prod.checkoutUrl ? "_blank" : "_self"} 
+                    rel="noreferrer" 
+                    className={`w-full text-center ${c.bg} ${c.hover} text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md`}
+                  >
+                    <span>Secure Checkout</span>
+                    {prod.checkoutUrl && <ExternalLink className="w-3.5 h-3.5" />}
+                  </a>
                 </div>
-                <a href="#contact" className={`w-full text-center ${c.bg} ${c.hover} text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition`}>
-                  Select Package
-                </a>
               </div>
             ))}
           </div>
@@ -296,11 +312,13 @@ export default function MasterPremiumTemplate({
           <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Our Executive Team</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {defaultTeam.map((member) => (
+          {activeTeam.map((member) => (
             <div key={member.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col`}>
-              <div className="h-72 w-full">
-                <img src={member.image} className="w-full h-full object-cover" />
-              </div>
+              {member.image ? (
+                <div className="h-72 w-full"><img src={member.image} alt={member.name} className="w-full h-full object-cover" /></div>
+              ) : (
+                <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted}`}>No Photo</div>
+              )}
               <div className="p-6 text-center">
                 <h4 className={`text-xl font-bold ${textMain}`}>{member.name}</h4>
                 <p className={`${c.text} text-xs font-bold uppercase tracking-wider mt-1`}>{member.role}</p>
@@ -318,19 +336,17 @@ export default function MasterPremiumTemplate({
             <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Frequently Asked Questions</h3>
           </div>
           <div className="space-y-6">
-            <div className={`${bgCard} border ${borderMuted} p-6 rounded-2xl`}>
-              <h4 className={`font-bold text-lg ${textMain}`}>What areas do you service across Australia?</h4>
-              <p className={`${textMuted} text-sm mt-2`}>We provide direct coverage across metropolitan Melbourne, Sydney, and surrounding regional hubs.</p>
-            </div>
-            <div className={`${bgCard} border ${borderMuted} p-6 rounded-2xl`}>
-              <h4 className={`font-bold text-lg ${textMain}`}>How quickly can we initiate a project consultation?</h4>
-              <p className={`${textMuted} text-sm mt-2`}>Our managing partners typically respond to priority inquiries within 2 hours.</p>
-            </div>
+            {activeFaqs.map((faq) => (
+              <div key={faq.id} className={`${bgCard} border ${borderMuted} p-6 rounded-2xl`}>
+                <h4 className={`font-bold text-lg ${textMain}`}>{faq.question}</h4>
+                <p className={`${textMuted} text-sm mt-2 leading-relaxed`}>{faq.answer}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
 
-      {/* FOOTER & SOCIAL MEDIA ICONS PLACED UNDER STREET ADDRESS */}
+      {/* FOOTER & SOCIAL MEDIA ICONS UNDER STREET ADDRESS */}
       {activeSections.contact && (
         <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
           <div className="flex flex-col gap-6">
@@ -355,7 +371,7 @@ export default function MasterPremiumTemplate({
               </div>
             </div>
 
-            {/* Social media links neatly positioned directly under the street address info */}
+            {/* Social media icons positioned strictly under the street address info */}
             <div className="flex items-center gap-3 pt-2">
               {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Globe className="w-5 h-5" /></a>}
               {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Share2 className="w-5 h-5" /></a>}
