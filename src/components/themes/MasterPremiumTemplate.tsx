@@ -31,10 +31,10 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const displayHero = heroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
+  // Preloaded industry default hero image if no custom upload exists
+  const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
 
-  // Smart defaults if arrays are empty
   const activeServices = servicesList.length > 0 ? servicesList : config.servicesDefault;
   const activeProjects = projectsList.length > 0 ? projectsList : config.projectsDefault;
   const activeProducts = products.length > 0 ? products : config.productsDefault;
@@ -58,7 +58,6 @@ export default function MasterPremiumTemplate({
     if (error) alert('Error submitting inquiry: ' + error.message); else setSubmitted(true);
   };
 
-  // --- SAFE THEME ENGINE ---
   const isDark = themeMode === 'dark';
   const bgMain = isDark ? 'bg-slate-950' : 'bg-slate-50';
   const textMain = isDark ? 'text-slate-100' : 'text-slate-900';
@@ -81,7 +80,7 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300`}>
       
-      {/* HEADER / NAVIGATION WITH LOGO HOME LINK */}
+      {/* HEADER */}
       <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -224,21 +223,21 @@ export default function MasterPremiumTemplate({
             <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>{headers?.projects?.sub || 'PORTFOLIO'}</h2>
             <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>{headers?.projects?.main || 'Recent Projects'}</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {activeProjects.map((proj) => (
               <div key={proj.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden flex flex-col group relative shadow-md`}>
                 {proj.image ? (
-                  <div className="h-80 w-full relative">
+                  <div className="h-72 w-full relative">
                     <div className="absolute inset-0 bg-slate-900/40 z-10 group-hover:bg-slate-900/20 transition duration-500"></div>
                     <img src={proj.image} alt={proj.title} className="w-full h-full object-cover relative z-0" />
                   </div>
                 ) : (
-                  <div className={`h-80 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm`}>Media Showcase</div>
+                  <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm`}>Media Showcase</div>
                 )}
-                <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent z-20 pt-24">
+                <div className="p-6 flex flex-col gap-2 bg-slate-900">
                   <span className={`text-[10px] font-bold ${c.text} uppercase tracking-widest`}>{proj.subtitle}</span>
-                  <h4 className="font-bold text-white text-3xl mt-2">{proj.title}</h4>
-                  <p className="text-base text-slate-300 mt-3">{proj.desc}</p>
+                  <h4 className="font-bold text-white text-xl">{proj.title}</h4>
+                  <p className="text-xs text-slate-400 mt-1">{proj.desc}</p>
                 </div>
               </div>
             ))}
@@ -267,7 +266,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PRODUCTS / FIXED-PRICE PACKAGES WITH IMAGE UPLOADS & PAYMENT GATEWAY LINKS */}
+      {/* PRODUCTS / FIXED-PRICE PACKAGES WITH IMAGE UPLOADS & CHECKOUT URL */}
       {showProducts && activeSections.products && activeProducts.length > 0 && (
         <section id="products" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -346,7 +345,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* FOOTER & SOCIAL MEDIA ICONS UNDER STREET ADDRESS */}
+      {/* FOOTER & SOCIAL MEDIA ICONS PLACED UNDER STREET ADDRESS */}
       {activeSections.contact && (
         <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
           <div className="flex flex-col gap-6">
@@ -371,7 +370,7 @@ export default function MasterPremiumTemplate({
               </div>
             </div>
 
-            {/* Social media icons positioned strictly under the street address info */}
+            {/* Social media links positioned strictly under the street address info */}
             <div className="flex items-center gap-3 pt-2">
               {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Globe className="w-5 h-5" /></a>}
               {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Share2 className="w-5 h-5" /></a>}
