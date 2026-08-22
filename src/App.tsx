@@ -29,11 +29,16 @@ interface ClientProfile {
 }
 
 export default function App() {
-  // --- AUTHENTICATION STATES RESTORED ---
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [currentView, setCurrentView] = useState<'builder' | 'dashboard' | 'domains' | 'billing' | 'analytics' | 'support' | 'webhooks' | 'routing' | 'portal' | 'emails'>('builder');
+  // --- NEW PAGE ISOLATION ARCHITECTURE ---
+  // Controls which "Page" the user is on
+  const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('dashboard');
+  
+  // Controls which view is showing INSIDE the dashboard
+  const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
+  
   const [checkoutNotification, setCheckoutNotification] = useState<string | null>(null);
   
   const [profiles, setProfiles] = useState<ClientProfile[]>([
@@ -53,7 +58,6 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    // --- SUPABASE AUTH LISTENERS RESTORED ---
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setCheckingAuth(false);
@@ -66,11 +70,13 @@ export default function App() {
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('success') === 'true') {
       setCheckoutNotification('🎉 Payment successful! Your subscription is now active.');
-      setCurrentView('billing');
+      setActivePage('dashboard');
+      setDashboardView('billing');
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (queryParams.get('canceled') === 'true') {
       setCheckoutNotification('⚠️ Checkout was canceled. You can try again anytime.');
-      setCurrentView('billing');
+      setActivePage('dashboard');
+      setDashboardView('billing');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -92,8 +98,8 @@ export default function App() {
       id: newId,
       businessName: `New Client ${newId}`,
       phone: '+61 400 000 000',
-      suburb: 'Melbourne VIC',
-      theme: 'plumbing',
+      suburb: 'Mumbai',
+      theme: 'bpo',
       designConcept: 'conversion'
     };
     setProfiles([...profiles, newProfile]);
@@ -107,17 +113,31 @@ export default function App() {
     setIsGenerating(false);
   };
 
-  // --- AUTHENTICATION GATES RESTORED ---
   if (checkingAuth) {
     return <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-slate-400">Loading SiteForge Session...</div>;
   }
 
   if (!session) {
-    return <AuthView onLoginSuccess={() => {}} />;
+    return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
   }
 
+  // --- HELPER COMPONENT FOR DASHBOARD NAVIGATION ---
+  const DashboardNavItem = ({ id, label }: { id: string, label: string }) => (
+    <button
+      onClick={() => setDashboardView(id as any)}
+      className={`w-full flex items-center px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+        dashboardView === id
+          ? 'bg-blue-600/15 text-blue-500 shadow-sm'
+          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
+      
       {checkoutNotification && (
         <div className="absolute top-4 right-4 z-50 bg-slate-900 border border-slate-700 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce">
           <p className="text-sm font-bold text-white">{checkoutNotification}</p>
@@ -130,109 +150,95 @@ export default function App() {
         </div>
       )}
 
-      {/* GLOBAL NAVIGATION SIDEBAR */}
-      <div className="w-20 border-r border-slate-800 bg-slate-950 flex flex-col items-center py-6 gap-6">
-        <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-600/30">
-          SF
-        </div>
-        <div className="flex flex-col gap-3 w-full px-3">
-          <button 
-            onClick={() => setCurrentView('builder')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'builder' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Website Builder"
-          >
-            Builder
-          </button>
-          <button 
-            onClick={() => setCurrentView('dashboard')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'dashboard' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Leads Dashboard"
-          >
-            Leads
-          </button>
-          <button 
-            onClick={() => setCurrentView('routing')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'routing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Lead Routing Rules"
-          >
-            Route
-          </button>
-          <button 
-            onClick={() => setCurrentView('domains')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'domains' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Domains Manager"
-          >
-            Domains
-          </button>
-          <button 
-            onClick={() => setCurrentView('billing')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'billing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Billing & Subscriptions"
-          >
-            Billing
-          </button>
-          <button 
-            onClick={() => setCurrentView('analytics')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Platform Analytics"
-          >
-            Analytics
-          </button>
-          <button 
-            onClick={() => setCurrentView('portal')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'portal' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Client Portal"
-          >
-            Portal
-          </button>
-          <button 
-            onClick={() => setCurrentView('emails')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'emails' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Email Templates"
-          >
-            Emails
-          </button>
-          <button 
-            onClick={() => setCurrentView('support')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'support' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Support Ticketing"
-          >
-            Support
-          </button>
-          <button 
-            onClick={() => setCurrentView('webhooks')}
-            className={`w-full py-3 rounded-xl flex items-center justify-center transition font-bold text-xs ${currentView === 'webhooks' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-slate-900'}`}
-            title="Webhook Endpoints"
-          >
-            Hooks
-          </button>
-        </div>
-        <div className="mt-auto px-3 w-full">
-          <button 
-            onClick={() => supabase.auth.signOut()}
-            className="w-full py-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-bold text-xs transition border border-red-500/20"
-            title="Sign Out"
-          >
-            Out
-          </button>
-        </div>
-      </div>
+      {/* =========================================
+          PAGE 1: THE SAAS DASHBOARD (Lovable Style)
+          ========================================= */}
+      {activePage === 'dashboard' && (
+        <div className="flex h-full w-full">
+          {/* WIDE LEFT SIDEBAR */}
+          <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl shadow-black/50">
+            
+            <div className="p-6 border-b border-slate-800">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">SF</div>
+                <span className="font-bold text-lg tracking-tight text-white">SiteForge</span>
+              </div>
+              
+              <button 
+                onClick={() => setActivePage('builder')}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                Launch Builder
+              </button>
+            </div>
 
-      {/* VIEW RENDERER */}
-      {currentView === 'dashboard' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><LeadsView /></div>}
-      {currentView === 'routing' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><RoutingView /></div>}
-      {currentView === 'domains' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><DomainsView /></div>}
-      {currentView === 'billing' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><SubscriptionsView /></div>}
-      {currentView === 'analytics' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><AnalyticsView /></div>}
-      {currentView === 'portal' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><ClientPortalView /></div>}
-      {currentView === 'emails' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><EmailTemplatesView /></div>}
-      {currentView === 'support' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><SupportView /></div>}
-      {currentView === 'webhooks' && <div className="flex-1 h-full overflow-y-auto bg-slate-950"><WebhooksView /></div>}
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-2">Platform Management</div>
+              <DashboardNavItem id="leads" label="Lead Pipeline" />
+              <DashboardNavItem id="routing" label="Lead Routing Rules" />
+              <DashboardNavItem id="domains" label="Domain Manager" />
+              <DashboardNavItem id="portal" label="Client Portal" />
 
-      {currentView === 'builder' && (
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-8">System & Config</div>
+              <DashboardNavItem id="analytics" label="Platform Analytics" />
+              <DashboardNavItem id="billing" label="Subscriptions & Billing" />
+              <DashboardNavItem id="emails" label="Email Templates" />
+              <DashboardNavItem id="webhooks" label="Webhooks & APIs" />
+              <DashboardNavItem id="support" label="Support Tickets" />
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+              <button 
+                onClick={() => supabase.auth.signOut()}
+                className="w-full py-2.5 rounded-xl bg-slate-800/50 text-slate-400 hover:bg-red-500/10 hover:text-red-400 font-bold text-sm transition"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+          {/* MAIN DASHBOARD CONTENT AREA */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-950 relative">
+            <header className="h-16 border-b border-slate-800 bg-slate-900/40 flex items-center px-8 backdrop-blur-md sticky top-0 z-10">
+              <h1 className="text-xl font-bold text-white tracking-tight capitalize">
+                {dashboardView.replace('-', ' ')}
+              </h1>
+            </header>
+            
+            <main className="flex-1 overflow-y-auto p-8">
+              <div className="max-w-7xl mx-auto h-full">
+                {dashboardView === 'leads' && <LeadsView />}
+                {dashboardView === 'routing' && <RoutingView />}
+                {dashboardView === 'domains' && <DomainsView />}
+                {dashboardView === 'billing' && <SubscriptionsView />}
+                {dashboardView === 'analytics' && <AnalyticsView />}
+                {dashboardView === 'portal' && <ClientPortalView />}
+                {dashboardView === 'emails' && <EmailTemplatesView />}
+                {dashboardView === 'support' && <SupportView />}
+                {dashboardView === 'webhooks' && <WebhooksView />}
+              </div>
+            </main>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================
+          PAGE 2: THE SITEFORGE BUILDER ENGINE
+          ========================================= */}
+      {activePage === 'builder' && (
         <div className="flex h-full w-full overflow-hidden">
+          
           {/* LEFT BUILDER CONTROLS */}
-          <div className="w-[380px] border-r border-slate-800 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto">
+          <div className="w-[380px] border-r border-slate-800 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto relative z-10 shadow-2xl shadow-black">
+            
+            <button 
+              onClick={() => setActivePage('dashboard')}
+              className="flex items-center gap-2 text-slate-400 hover:text-white transition text-xs font-bold mb-2 w-fit px-3 py-2 rounded-lg bg-slate-900 border border-slate-800"
+            >
+              &larr; Back to Dashboard
+            </button>
+
             <div>
               <h1 className="text-xl font-black tracking-tight text-white">SITEFORGE <span className="text-blue-500">ENGINE</span></h1>
               <p className="text-xs text-slate-400 mt-1">Multi-tenant AI website generator</p>
@@ -334,6 +340,7 @@ export default function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
