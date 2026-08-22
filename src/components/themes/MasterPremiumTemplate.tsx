@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, ShoppingCart, Facebook, Instagram, Star, Video, ArrowRight, Activity } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, ShoppingCart, Globe, Share2, Star, Video, ArrowRight, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem } from '../../constants/industryConfigs';
 
@@ -38,7 +38,7 @@ export default function MasterPremiumTemplate({
   const activeServices = servicesList.length > 0 ? servicesList : config.servicesDefault;
   const activeProjects = projectsList.length > 0 ? projectsList : config.projectsDefault;
 
-  // Supabase Lead Ingestion (Identical to existing mechanism)
+  // Supabase Lead Ingestion
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -96,8 +96,8 @@ export default function MasterPremiumTemplate({
 
         <div className="flex items-center gap-4">
           <div className="hidden lg:flex items-center gap-2 mr-2 border-r border-slate-300 dark:border-slate-700 pr-4">
-            {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Facebook className="w-4 h-4" /></a>}
-            {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Instagram className="w-4 h-4" /></a>}
+            {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Globe className="w-4 h-4" /></a>}
+            {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Share2 className="w-4 h-4" /></a>}
             {socials.tiktok && <a href={socials.tiktok} target="_blank" rel="noreferrer" className={`${textMuted} hover:${c.text} transition`}><Video className="w-4 h-4" /></a>}
           </div>
           <a href={`tel:${phone}`} className={`hidden sm:flex items-center gap-2 font-bold text-sm ${textMain} hover:${c.text} transition`}>
@@ -238,6 +238,12 @@ export default function MasterPremiumTemplate({
                 <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
                 <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
               </div>
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`w-10 h-10 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Globe className="w-4 h-4" /></a>}
+              {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`w-10 h-10 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Share2 className="w-4 h-4" /></a>}
+              {socials.tiktok && <a href={socials.tiktok} target="_blank" rel="noreferrer" className={`w-10 h-10 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Video className="w-4 h-4" /></a>}
             </div>
           </div>
 
