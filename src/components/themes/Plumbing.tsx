@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Phone, MessageCircle, CheckCircle, ShieldCheck, Clock, Wrench, ChevronDown, ChevronUp, MapPin, Mail } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase'; // Keeping your exact import path
 
+// 1. ADDED LOGO AND HERO IMAGE PROPS
 interface TemplateProps {
   businessName: string;
   phone: string;
   suburb: string;
+  logo?: string | null;
+  heroImage?: string | null;
 }
 
-export default function PlumbingTemplate({ businessName, phone, suburb }: TemplateProps) {
+export default function PlumbingTemplate({ businessName, phone, suburb, logo, heroImage }: TemplateProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [leadName, setLeadName] = useState('');
   const [leadEmail, setLeadEmail] = useState('');
@@ -16,6 +19,9 @@ export default function PlumbingTemplate({ businessName, phone, suburb }: Templa
   const [leadMessage, setLeadMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // 2. ADDED FALLBACK IMAGE
+  const displayHero = heroImage || "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80";
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +59,16 @@ export default function PlumbingTemplate({ businessName, phone, suburb }: Templa
       {/* 1. STICKY NAVIGATION BAR */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-8 py-4 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-lg shadow-lg shadow-blue-600/30">
-            {businessName.charAt(0)}
-          </div>
+          
+          {/* 3. INJECTED DYNAMIC LOGO HERE */}
+          {logo ? (
+            <img src={logo} alt={businessName} className="h-9 object-contain" />
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-lg shadow-lg shadow-blue-600/30 text-white">
+              {businessName.charAt(0)}
+            </div>
+          )}
+          
           <span className="font-extrabold text-lg tracking-tight text-white">{businessName}</span>
         </div>
         
@@ -86,65 +99,78 @@ export default function PlumbingTemplate({ businessName, phone, suburb }: Templa
       </header>
 
       {/* 2. HERO SECTION */}
-      <section className="relative px-8 py-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="flex flex-col gap-6">
-          <div className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 px-3.5 py-1.5 rounded-full text-blue-400 text-xs font-bold w-max">
-            <ShieldCheck className="w-4 h-4" /> LICENSED & VERIFIED LOCAL SPECIALISTS
-          </div>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.1]">
-            EMERGENCY PLUMBING & REPAIRS ACROSS <span className="text-blue-500">{suburb.toUpperCase()}</span>
-          </h1>
-          <p className="text-slate-300 text-base max-w-lg">
-            Fast response times, upfront transparent pricing, and 24/7 expert maintenance handled by your trusted local team in {suburb}.
-          </p>
-          
-          <div className="flex flex-wrap gap-4 pt-2">
-            <a 
-              href="#contact"
-              className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl text-sm transition shadow-xl shadow-blue-600/30 flex items-center gap-3"
-            >
-              Get a Free Quote
-            </a>
-            <a 
-              href={`tel:${phone}`}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-bold py-4 px-8 rounded-2xl text-sm transition flex items-center gap-3"
-            >
-              <Phone className="w-4 h-4 text-emerald-400" /> Call {phone}
-            </a>
-          </div>
-
-          {/* Trust Badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-900 text-xs font-bold text-slate-400">
-            <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Local Team</div>
-            <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Clear Pricing</div>
-            <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Fast Response</div>
-            <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Tidy Work</div>
-          </div>
+      {/* 4. WRAPPED HERO IN DYNAMIC BACKGROUND IMAGE */}
+      <section className="relative overflow-hidden">
+        
+        {/* Dynamic Background Image with Heavy Dark Overlay to preserve your text visibility */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-all duration-500"
+          style={{ backgroundImage: `url(${displayHero})` }}
+        >
+          <div className="absolute inset-0 bg-slate-950/85 mix-blend-multiply"></div>
         </div>
 
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
-          <div className="relative bg-slate-900 border border-slate-800 p-8 rounded-3xl flex flex-col gap-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <span className="font-bold text-sm text-white">Live Service Request</span>
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        {/* Your Original Hero Content */}
+        <div className="relative z-10 px-8 py-24 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="flex flex-col gap-6">
+            <div className="inline-flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 px-3.5 py-1.5 rounded-full text-blue-400 text-xs font-bold w-max">
+              <ShieldCheck className="w-4 h-4" /> LICENSED & VERIFIED LOCAL SPECIALISTS
             </div>
-            <div className="space-y-3">
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                ⚡ Average dispatch time in <span className="text-white font-bold">{suburb}</span>: <span className="text-emerald-400 font-bold">28 minutes</span>
-              </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-                🛠️ Fully equipped vans carrying 95% of common replacement parts on hand.
-              </div>
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white leading-[1.1]">
+              EMERGENCY PLUMBING & REPAIRS ACROSS <span className="text-blue-500">{suburb.toUpperCase()}</span>
+            </h1>
+            <p className="text-slate-300 text-base max-w-lg">
+              Fast response times, upfront transparent pricing, and 24/7 expert maintenance handled by your trusted local team in {suburb}.
+            </p>
+            
+            <div className="flex flex-wrap gap-4 pt-2">
+              <a 
+                href="#contact"
+                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-2xl text-sm transition shadow-xl shadow-blue-600/30 flex items-center gap-3"
+              >
+                Get a Free Quote
+              </a>
+              <a 
+                href={`tel:${phone}`}
+                className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-bold py-4 px-8 rounded-2xl text-sm transition flex items-center gap-3"
+              >
+                <Phone className="w-4 h-4 text-emerald-400" /> Call {phone}
+              </a>
             </div>
-            <a 
-              href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 py-3.5 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4" /> Instant Chat on WhatsApp
-            </a>
+
+            {/* Trust Badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-slate-900/50 text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Local Team</div>
+              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Clear Pricing</div>
+              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Fast Response</div>
+              <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /> Tidy Work</div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur-xl opacity-30 animate-pulse"></div>
+            <div className="relative bg-slate-900 border border-slate-800 p-8 rounded-3xl flex flex-col gap-6 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <span className="font-bold text-sm text-white">Live Service Request</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+              </div>
+              <div className="space-y-3">
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+                  ⚡ Average dispatch time in <span className="text-white font-bold">{suburb}</span>: <span className="text-emerald-400 font-bold">28 minutes</span>
+                </div>
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 text-xs text-slate-300">
+                  🛠️ Fully equipped vans carrying 95% of common replacement parts on hand.
+                </div>
+              </div>
+              <a 
+                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 py-3.5 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" /> Instant Chat on WhatsApp
+              </a>
+            </div>
           </div>
         </div>
       </section>
