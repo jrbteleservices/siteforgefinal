@@ -1,12 +1,6 @@
 import { useState, useEffect } from 'react';
-import PlumbingTemplate from './components/themes/Plumbing';
-import RoofingTemplate from './components/themes/Roofing';
-import ElectricianTemplate from './components/themes/Electrician';
-import HvacTemplate from './components/themes/Hvac';
-import BpoTemplate from './components/themes/Bpo';
-import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate'; // NEW IMPORT
-import { AUSTRALIAN_THEMES } from './constants/industryConfigs'; // NEW IMPORT
-
+import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate';
+import { AUSTRALIAN_THEMES } from './constants/industryConfigs';
 import LeadsView from './components/dashboard/LeadsView';
 import DomainsView from './components/dashboard/DomainsView';
 import SubscriptionsView from './components/dashboard/SubscriptionsView';
@@ -87,7 +81,7 @@ export default function App() {
 
   // --- PROFILES & CONTENT STATE ---
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'plumbing' }
+    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'luxury_builder' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
@@ -130,7 +124,7 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
       
-      {/* FULLY RESTORED DASHBOARD */}
+      {/* DASHBOARD VIEW */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
            <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
@@ -176,7 +170,7 @@ export default function App() {
         </div>
       )}
 
-      {/* THE ADVANCED BUILDER */}
+      {/* BUILDER VIEW */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
           
@@ -222,7 +216,6 @@ export default function App() {
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   
-                  {/* EXPANDED CONTENT TAB (NOW 14 THEMES!) */}
                   {editorTab === 'content' && (
                     <div className="space-y-5 animate-in fade-in">
                       <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
@@ -231,17 +224,6 @@ export default function App() {
                         <div>
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Industry Theme</label>
                           <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
-                            {/* Original 5 Hardcoded */}
-                            <optgroup label="Core Trades">
-                              <option value="plumbing">Plumbing & Emergency</option>
-                              <option value="roofing">Roofing & Restorations</option>
-                              <option value="electrician">Electrical Contracting</option>
-                              <option value="hvac">HVAC & Climate Control</option>
-                            </optgroup>
-                            <optgroup label="Corporate">
-                              <option value="bpo">BPO & Call Center Services</option>
-                            </optgroup>
-                            {/* New Dynamic Premium Themes */}
                             <optgroup label="Premium Verticals">
                               {Object.values(AUSTRALIAN_THEMES).map(theme => (
                                 <option key={theme.id} value={theme.id}>{theme.name}</option>
@@ -316,10 +298,8 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* SECTIONS TAB */}
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
-                      
                       <div className="space-y-4">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Services Section</h3></div>
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
@@ -333,38 +313,12 @@ export default function App() {
                             </div>
                           ))}
                           <button onClick={() => setServicesList([...servicesList, { id: Date.now().toString(), title: 'New Service', desc: 'Description here...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900">+ Add Service Customization</button>
-                          <p className="text-[10px] text-slate-500 text-center">Note: Premium Templates will auto-fill industry defaults if left blank.</p>
+                          <p className="text-[10px] text-slate-500 text-center">Note: Master Templates will auto-fill industry defaults if left blank.</p>
                         </div>
                       </div>
-
-                      <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Client Reviews</h3></div>
-                        <input type="text" value={headers.reviews.sub} onChange={(e) => setHeaders({...headers, reviews: {...headers.reviews, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        <input type="text" value={headers.reviews.main} onChange={(e) => setHeaders({...headers, reviews: {...headers.reviews, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        
-                        <div className="space-y-3 mt-4">
-                          {reviewsList.map((review, index) => (
-                            <div key={review.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => setReviewsList(reviewsList.filter(r => r.id !== review.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <div className="flex gap-2">
-                                <input type="text" value={review.name} onChange={(e) => { const n = [...reviewsList]; n[index].name = e.target.value; setReviewsList(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Client Name" />
-                                <select value={review.rating} onChange={(e) => { const n = [...reviewsList]; n[index].rating = Number(e.target.value); setReviewsList(n); }} className="w-16 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white">
-                                  <option value={5}>5 ★</option>
-                                  <option value={4}>4 ★</option>
-                                  <option value={3}>3 ★</option>
-                                </select>
-                              </div>
-                              <textarea value={review.text} onChange={(e) => { const n = [...reviewsList]; n[index].text = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Review text..." />
-                            </div>
-                          ))}
-                          <button onClick={() => setReviewsList([...reviewsList, { id: Date.now().toString(), name: 'New Client', rating: 5, text: 'Great service!' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900">+ Add Review</button>
-                        </div>
-                      </div>
-
                     </div>
                   )}
 
-                  {/* MEDIA TAB */}
                   {editorTab === 'media' && (
                     <div className="space-y-6 animate-in fade-in">
                       <div className="space-y-2">
@@ -393,7 +347,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* LAYOUT TAB */}
                   {editorTab === 'layout' && (
                     <div className="space-y-4 animate-in fade-in">
                       <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules.</p>
@@ -419,14 +372,8 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* COMMERCE TAB */}
                   {editorTab === 'commerce' && (
                     <div className="space-y-4 animate-in fade-in">
-                      {!activeSections.products && (
-                         <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-amber-400 text-xs font-bold mb-4">
-                           ⚠️ The Products section is currently disabled in the Layout tab.
-                         </div>
-                      )}
                       <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product', price: '0' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
                         + Add Fixed Price Service
                       </button>
@@ -476,7 +423,7 @@ export default function App() {
                 )}
 
                 <div className="relative">
-                  {/* ENGINE ROUTER - The magic happens here! */}
+                  {/* MASTER ENGINE ROUTER */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -486,20 +433,10 @@ export default function App() {
                       products, activeSections, themeMode
                     };
 
-                    return (
-                      <>
-                        {/* 1. ORIGINAL 5 TEMPLATES */}
-                        {selectedTheme === 'plumbing' && <PlumbingTemplate {...templateProps as any} />}
-                        {selectedTheme === 'roofing' && <RoofingTemplate {...templateProps as any} />}
-                        {selectedTheme === 'electrician' && <ElectricianTemplate {...templateProps as any} />}
-                        {selectedTheme === 'hvac' && <HvacTemplate {...templateProps as any} />}
-                        {selectedTheme === 'bpo' && <BpoTemplate {...templateProps as any} />}
+                    const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
 
-                        {/* 2. THE NEW 9 MASTER-TEMPLATE VERTICALS */}
-                        {AUSTRALIAN_THEMES[selectedTheme] && (
-                          <MasterPremiumTemplate config={AUSTRALIAN_THEMES[selectedTheme]} {...templateProps as any} />
-                        )}
-                      </>
+                    return (
+                      <MasterPremiumTemplate config={currentConfig} {...templateProps as any} />
                     );
                   })()}
                 </div>
