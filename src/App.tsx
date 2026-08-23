@@ -12,15 +12,15 @@ import EmailTemplatesView from './components/dashboard/EmailTemplatesView';
 import RoutingView from './components/common/RoutingView';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
-import { exportToHtml } from './utils/exporter';
-import { generateAiContent } from './utils/ai';
 import { supabase } from './supabase';
 
 interface ClientProfile { id: string; businessName: string; phone: string; suburb: string; theme: string; }
-interface Product { id: string; name: string; price: string; }
+interface Product { id: string; name: string; price: string; image?: string; checkoutUrl?: string; }
 interface ServiceItem { id: string; title: string; desc: string; image?: string; }
 interface ProjectItem { id: string; subtitle: string; title: string; desc: string; image?: string; }
-interface ReviewItem { id: string; name: string; rating: number; text: string; }
+interface ReviewItem { id: string; name: string; rating: number; text: string; image?: string; }
+interface TeamMemberItem { id: string; name: string; role: string; image?: string; }
+interface FaqItem { id: string; question: string; answer: string; }
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -30,13 +30,13 @@ export default function App() {
   const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('dashboard');
   const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
   
-  // --- BUILDER / EDITOR STATE ---
-  const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce'>('content');
+  // --- BUILDER / EDITOR TABS ---
+  const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // New Content State
+  // Core Business Info
   const [colorPalette, setColorPalette] = useState('blue');
   const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
   const [city, setCity] = useState('Melbourne');
@@ -49,7 +49,7 @@ export default function App() {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
-  // Layout & Commerce
+  // Layout Section Toggles
   const [activeSections, setActiveSections] = useState({
     hero: true,
     liveRequest: true,
@@ -61,7 +61,6 @@ export default function App() {
     faq: true,
     contact: true
   });
-  const [products, setProducts] = useState<Product[]>([{ id: '1', name: 'Standard Service Call', price: '99' }]);
 
   // Headers State
   const [headers, setHeaders] = useState({
@@ -71,15 +70,24 @@ export default function App() {
     reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
 
-  // Dynamic Arrays
+  // Fully Editable Arrays (Services, Projects, Reviews, Products, Team, FAQs)
   const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
   const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>([
     { id: '1', name: 'Sarah Jenkins', rating: 5, text: 'Absolutely fantastic service. Arrived on time and fixed the issue perfectly. Highly recommended!' },
     { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
   ]);
+  const [products, setProducts] = useState<Product[]>([
+    { id: '1', name: 'Standard Service Call', price: '99', image: '', checkoutUrl: 'https://buy.stripe.com/sample' }
+  ]);
+  const [teamList, setTeamList] = useState<TeamMemberItem[]>([
+    { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: '' }
+  ]);
+  const [faqList, setFaqList] = useState<FaqItem[]>([
+    { id: 'f1', question: 'What areas do you service?', answer: 'We service all metropolitan areas.' }
+  ]);
 
-  // --- PROFILES & CONTENT STATE ---
+  // Profiles State
   const [profiles, setProfiles] = useState<ClientProfile[]>([
     { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'luxury_builder' }
   ]);
@@ -105,7 +113,7 @@ export default function App() {
     return supabase.storage.from('site-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string | null>>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
     const file = e.target.files?.[0]; if (!file) return;
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
@@ -170,7 +178,7 @@ export default function App() {
         </div>
       )}
 
-      {/* BUILDER VIEW */}
+      {/* BUILDER / ELEMENTOR EDITORIAL VIEW */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
           
@@ -195,7 +203,7 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden relative">
             
             {!isPreviewMode && (
-              <div className="w-[420px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
+              <div className="w-[450px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
                 
                 {isUploading && (
                   <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -207,7 +215,7 @@ export default function App() {
                 )}
 
                 <div className="flex p-2 gap-1 border-b border-slate-800 bg-slate-900/50 flex-wrap">
-                  {(['content', 'sections', 'media', 'layout', 'commerce'] as const).map(tab => (
+                  {(['content', 'sections', 'media', 'layout', 'commerce', 'team'] as const).map(tab => (
                     <button key={tab} onClick={() => setEditorTab(tab)} className={`px-3 py-2 text-xs font-bold rounded-lg capitalize transition ${editorTab === tab ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
                       {tab}
                     </button>
@@ -281,7 +289,7 @@ export default function App() {
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links</h4>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links (Footer Display)</h4>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instagram URL</label>
                           <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
@@ -300,20 +308,102 @@ export default function App() {
 
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
+                      {/* What We Do / Services Section */}
                       <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Services Section</h3></div>
-                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        <div className="space-y-3 mt-4">
-                          {servicesList.map((service, index) => (
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
+                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle (e.g. OUR CAPABILITIES)" />
+                        <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
+                        <div className="space-y-4 mt-4">
+                          {(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || []).map((service, index) => (
                             <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => setServicesList(servicesList.filter(s => s.id !== service.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={service.title} onChange={(e) => { const n = [...servicesList]; n[index].title = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" />
-                              <textarea value={service.desc} onChange={(e) => { const n = [...servicesList]; n[index].desc = e.target.value; setServicesList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} />
+                              <button onClick={() => {
+                                const current = servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [];
+                                setServicesList(current.filter(s => s.id !== service.id));
+                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              
+                              <input type="text" value={service.title} onChange={(e) => { 
+                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
+                                current[index].title = e.target.value; setServicesList(current); 
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
+                              
+                              <textarea value={service.desc} onChange={(e) => { 
+                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
+                                current[index].desc = e.target.value; setServicesList(current); 
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
+                              
+                              <div>
+                                <label className="text-[10px] text-slate-400 uppercase">Service Image URL</label>
+                                <input type="text" value={service.image || ''} onChange={(e) => {
+                                  const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                                  current[index].image = e.target.value; setServicesList(current);
+                                }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                              </div>
                             </div>
                           ))}
-                          <button onClick={() => setServicesList([...servicesList, { id: Date.now().toString(), title: 'New Service', desc: 'Description here...' }])} className="w-full py-2 border border-dashed border-slate-700 text-slate-400 font-bold text-xs rounded-xl hover:bg-slate-900">+ Add Service Customization</button>
-                          <p className="text-[10px] text-slate-500 text-center">Note: Master Templates will auto-fill industry defaults if left blank.</p>
+                          <button onClick={() => {
+                            const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                            current.push({ id: Date.now().toString(), title: 'New Service Item', desc: 'Detailed description here...', image: '' });
+                            setServicesList(current);
+                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Service Item</button>
+                        </div>
+                      </div>
+
+                      {/* Recent Projects Section */}
+                      <div className="space-y-4 pt-6 border-t border-slate-800">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
+                        <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
+                        <div className="space-y-4 mt-4">
+                          {(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || []).map((proj, index) => (
+                            <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                              <button onClick={() => {
+                                const current = projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [];
+                                setProjectsList(current.filter(p => p.id !== proj.id));
+                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              
+                              <input type="text" value={proj.subtitle} onChange={(e) => {
+                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                current[index].subtitle = e.target.value; setProjectsList(current);
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle (e.g. Toorak)" />
+
+                              <input type="text" value={proj.title} onChange={(e) => { 
+                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
+                                current[index].title = e.target.value; setProjectsList(current); 
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
+                              
+                              <textarea value={proj.desc} onChange={(e) => { 
+                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
+                                current[index].desc = e.target.value; setProjectsList(current); 
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
+                              
+                              <div>
+                                <label className="text-[10px] text-slate-400 uppercase">Project Image URL</label>
+                                <input type="text" value={proj.image || ''} onChange={(e) => {
+                                  const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                  current[index].image = e.target.value; setProjectsList(current);
+                                }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                              </div>
+                            </div>
+                          ))}
+                          <button onClick={() => {
+                            const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                            current.push({ id: Date.now().toString(), subtitle: 'New Location', title: 'New Project Showcase', desc: 'Project overview...', image: '' });
+                            setProjectsList(current);
+                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Project Item</button>
+                        </div>
+                      </div>
+
+                      {/* FAQs Section */}
+                      <div className="space-y-4 pt-6 border-t border-slate-800">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Frequently Asked Questions (FAQs)</h3></div>
+                        <div className="space-y-4 mt-4">
+                          {faqList.map((faq, index) => (
+                            <div key={faq.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                              <button onClick={() => setFaqList(faqList.filter(f => f.id !== faq.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              <input type="text" value={faq.question} onChange={(e) => { const n = [...faqList]; n[index].question = e.target.value; setFaqList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Question" />
+                              <textarea value={faq.answer} onChange={(e) => { const n = [...faqList]; n[index].answer = e.target.value; setFaqList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Answer" />
+                            </div>
+                          ))}
+                          <button onClick={() => setFaqList([...faqList, { id: Date.now().toString(), question: 'New Question?', answer: 'Detailed answer...' }])} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add FAQ Item</button>
                         </div>
                       </div>
                     </div>
@@ -353,8 +443,8 @@ export default function App() {
                       
                       <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-blue-500/30">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">Live Service Request</span>
-                          <span className="text-[10px] text-slate-400">WhatsApp / Dispatch Box in Hero</span>
+                          <span className="text-sm font-bold text-white">Floating WhatsApp & Call Bar</span>
+                          <span className="text-[10px] text-slate-400">Sticky quick-action buttons on mobile/desktop</span>
                         </div>
                         <button onClick={() => setActiveSections({ ...activeSections, liveRequest: !activeSections.liveRequest })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.liveRequest ? 'bg-blue-500' : 'bg-slate-700'}`}>
                           <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.liveRequest ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -374,23 +464,53 @@ export default function App() {
 
                   {editorTab === 'commerce' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product', price: '0' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
-                        + Add Fixed Price Service
+                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Service Package', price: '199', image: '', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Product / Service Package
                       </button>
-                      <div className="space-y-3 mt-4">
+                      <div className="space-y-4 mt-4">
                         {products.map((product, index) => (
                           <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
                             <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" />
+                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Product Name" />
                             <div className="flex gap-2 items-center">
                               <span className="text-slate-400 text-sm">$</span>
-                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" />
+                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Price" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase">Product Image URL</label>
+                              <input type="text" value={product.image || ''} onChange={(e) => { const n = [...products]; n[index].image = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase">Stripe / PayPal Checkout Link</label>
+                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://buy.stripe.com/..." />
                             </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {editorTab === 'team' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <button onClick={() => setTeamList([...teamList, { id: Date.now().toString(), name: 'Team Member Name', role: 'Executive Title', image: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Team Member
+                      </button>
+                      <div className="space-y-4 mt-4">
+                        {teamList.map((member, index) => (
+                          <div key={member.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                            <button onClick={() => setTeamList(teamList.filter(t => t.id !== member.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                            <input type="text" value={member.name} onChange={(e) => { const n = [...teamList]; n[index].name = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Full Name" />
+                            <input type="text" value={member.role} onChange={(e) => { const n = [...teamList]; n[index].role = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Job Title / Role" />
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase">Photo URL</label>
+                              <input type="text" value={member.image || ''} onChange={(e) => { const n = [...teamList]; n[index].image = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             )}
@@ -430,7 +550,7 @@ export default function App() {
                       logo: siteLogo, heroImage, heroOpacity, 
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
-                      products, activeSections, themeMode
+                      products, activeSections, themeMode, teamList, faqList
                     };
 
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
