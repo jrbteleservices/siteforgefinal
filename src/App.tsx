@@ -60,6 +60,13 @@ export default function App() {
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
+  // NEW: Dynamic Hero and About Text Overrides
+  const [heroTagline, setHeroTagline] = useState('');
+  const [heroHeadline, setHeroHeadline] = useState('');
+  const [heroSubheadline, setHeroSubheadline] = useState('');
+  const [aboutTitle, setAboutTitle] = useState('');
+  const [aboutBody, setAboutBody] = useState('');
+
   // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
@@ -147,12 +154,11 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: 100% Bulletproof - Opens synchronously on click so browsers NEVER block it.
   const handlePublish = () => { 
-    // 1. Pack all current editor data immediately
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
+      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody, // NEW PROPS ADDED HERE
       headers, servicesList, projectsList, reviewsList,
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
@@ -160,33 +166,26 @@ export default function App() {
       additionalLegalInfo
     };
     
-    // 2. Save it securely to local storage
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
-    // 3. IMMEDIATELY open the actual working URL
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     const newTab = window.open(actualWorkingUrl, '_blank');
     
-    // 4. Fallback if the user has an extremely aggressive global popup blocker
     if (!newTab) {
       window.location.href = actualWorkingUrl;
     }
 
-    // 5. Update UI Button state briefly
     setIsPublishing(true); 
     setTimeout(() => { 
       setIsPublishing(false); 
     }, 800); 
   };
 
-  // --- EARLY RETURN FOR LIVE PUBLISHED TAB (FIXED FOR CUSTOMERS) ---
-  // If the URL contains ?published=true, NEVER show the login screen.
   if (isPublishedView) {
-    // If publishedData exists (you testing it), use it. 
-    // If it's null (a customer opening the link), use the default active state variables.
     const dataToRender = publishedData ? publishedData.templateProps : {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
+      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody,
       headers, servicesList, projectsList, reviewsList,
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
@@ -204,7 +203,6 @@ export default function App() {
     );
   }
 
-  // --- AUTH GUARD (Only applies if they are NOT on the ?published=true link) ---
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
   if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
 
@@ -439,7 +437,23 @@ export default function App() {
 
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
+                      
+                      {/* HERO SECTION EDITS */}
                       <div className="space-y-4">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Hero Section</h3></div>
+                        <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline (e.g. THE FUTURE OF WEB PRESENCE)" />
+                        <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline (e.g. Lightning-Fast Websites...)" />
+                        <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline content..." />
+                      </div>
+
+                      {/* ABOUT US EDITS */}
+                      <div className="space-y-4 pt-4 border-t border-slate-800">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">About Us Section</h3></div>
+                        <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Us Title" />
+                        <textarea value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={4} placeholder="About Us description body..." />
+                      </div>
+
+                      <div className="space-y-4 pt-4 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
@@ -764,6 +778,7 @@ export default function App() {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
                       logo: siteLogo, logoSize, heroImage, heroOpacity, 
+                      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody,
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList,
