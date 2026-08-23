@@ -15,7 +15,7 @@ import ProfileSwitcher from './components/profiles/ProfileSwitcher';
 import { supabase } from './supabase';
 
 interface ClientProfile { id: string; businessName: string; phone: string; suburb: string; theme: string; }
-interface Product { id: string; name: string; price: string; image?: string; checkoutUrl?: string; }
+interface Product { id: string; name: string; desc: string; price: string; image?: string; checkoutUrl?: string; }
 interface ServiceItem { id: string; title: string; desc: string; image?: string; }
 interface ProjectItem { id: string; subtitle: string; title: string; desc: string; image?: string; }
 interface ReviewItem { id: string; name: string; rating: number; text: string; image?: string; }
@@ -30,7 +30,7 @@ export default function App() {
   const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('dashboard');
   const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
   
-  // --- BUILDER / EDITOR TABS ---
+  // --- BUILDER TABS ---
   const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -43,9 +43,10 @@ export default function App() {
   const [email, setEmail] = useState('contact@apex.com.au');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
 
-  // Media
+  // Media & Logo Sizing Slider State
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
+  const [logoSize, setLogoSize] = useState<number>(40); // Default height in pixels
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
@@ -70,7 +71,7 @@ export default function App() {
     reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
 
-  // Fully Editable Arrays (Services, Projects, Reviews, Products, Team, FAQs)
+  // Fully Editable Arrays
   const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
   const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>([
@@ -78,7 +79,7 @@ export default function App() {
     { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
   ]);
   const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Standard Service Call', price: '99', image: '', checkoutUrl: 'https://buy.stripe.com/sample' }
+    { id: '1', name: 'Standard Service Call', desc: 'Professional diagnostic inspection and preliminary repair.', price: '99', image: '', checkoutUrl: 'https://paypal.me/sample' }
   ]);
   const [teamList, setTeamList] = useState<TeamMemberItem[]>([
     { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: '' }
@@ -113,7 +114,7 @@ export default function App() {
     return supabase.storage.from('site-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
+  const handleGeneralImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
     const file = e.target.files?.[0]; if (!file) return;
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
@@ -178,7 +179,7 @@ export default function App() {
         </div>
       )}
 
-      {/* BUILDER / ELEMENTOR EDITORIAL VIEW */}
+      {/* BUILDER EDITORIAL VIEW */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
           
@@ -203,7 +204,7 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden relative">
             
             {!isPreviewMode && (
-              <div className="w-[450px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
+              <div className="w-[460px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
                 
                 {isUploading && (
                   <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -311,8 +312,9 @@ export default function App() {
                       {/* What We Do / Services Section */}
                       <div className="space-y-4">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
-                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle (e.g. OUR CAPABILITIES)" />
+                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
+                        
                         <div className="space-y-4 mt-4">
                           {(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || []).map((service, index) => (
                             <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
@@ -331,12 +333,21 @@ export default function App() {
                                 current[index].desc = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
                               
-                              <div>
-                                <label className="text-[10px] text-slate-400 uppercase">Service Image URL</label>
-                                <input type="text" value={service.image || ''} onChange={(e) => {
-                                  const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
-                                  current[index].image = e.target.value; setServicesList(current);
-                                }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                              <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                {service.image && <img src={service.image} className="w-10 h-10 object-cover rounded-md" />}
+                                <div className="flex-1">
+                                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Service Image</label>
+                                  <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
+                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                                    current[index].image = url; setServicesList(current);
+                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
+                                </div>
+                                {service.image && (
+                                  <button onClick={() => {
+                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                                    current[index].image = ''; setServicesList(current);
+                                  }} className="text-red-400 text-xs hover:underline">Delete</button>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -352,6 +363,7 @@ export default function App() {
                       <div className="space-y-4 pt-6 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
                         <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
+                        
                         <div className="space-y-4 mt-4">
                           {(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || []).map((proj, index) => (
                             <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
@@ -375,12 +387,21 @@ export default function App() {
                                 current[index].desc = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
                               
-                              <div>
-                                <label className="text-[10px] text-slate-400 uppercase">Project Image URL</label>
-                                <input type="text" value={proj.image || ''} onChange={(e) => {
-                                  const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
-                                  current[index].image = e.target.value; setProjectsList(current);
-                                }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                              <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                                {proj.image && <img src={proj.image} className="w-10 h-10 object-cover rounded-md" />}
+                                <div className="flex-1">
+                                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Project Image</label>
+                                  <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
+                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                    current[index].image = url; setProjectsList(current);
+                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
+                                </div>
+                                {proj.image && (
+                                  <button onClick={() => {
+                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                    current[index].image = ''; setProjectsList(current);
+                                  }} className="text-red-400 text-xs hover:underline">Delete</button>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -412,21 +433,32 @@ export default function App() {
                   {editorTab === 'media' && (
                     <div className="space-y-6 animate-in fade-in">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Site Logo</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Site Logo Upload</label>
                         <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden group">
-                          {siteLogo ? <img src={siteLogo} className="h-12 object-contain" /> : <span className="text-2xl">🖼️</span>}
-                          <span className="text-xs font-medium text-slate-400">Click to upload logo</span>
-                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleImageUpload(e, setSiteLogo)} className="absolute inset-0 opacity-0 cursor-pointer" />
+                          {siteLogo ? <img src={siteLogo} style={{ height: `${logoSize}px` }} className="object-contain mb-2 transition-all" /> : <span className="text-2xl">🖼️</span>}
+                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setSiteLogo)} className="text-xs text-slate-400 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                          {siteLogo && <button onClick={() => setSiteLogo(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Logo</button>}
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image</label>
-                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden h-32">
-                          {heroImage ? <img src={heroImage} className="absolute inset-0 w-full h-full object-cover opacity-50" /> : <span className="text-2xl">📸</span>}
-                          <span className="text-xs font-medium text-slate-400 relative z-10 bg-slate-900/80 px-2 py-1 rounded">Upload hero image</span>
-                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleImageUpload(e, setHeroImage)} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+
+                      {/* LOGO SIZE SLIDER */}
+                      <div className="space-y-2 pt-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
+                          Logo Size (Height)
+                          <span className="text-blue-400">{logoSize}px</span>
+                        </label>
+                        <input type="range" min="20" max="90" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
+                      </div>
+
+                      <div className="space-y-2 pt-4 border-t border-slate-800">
+                        <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image Upload</label>
+                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden">
+                          {heroImage ? <img src={heroImage} className="h-24 w-full object-cover rounded-lg mb-2" /> : <span className="text-2xl">📸</span>}
+                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setHeroImage)} className="text-xs text-slate-400 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                          {heroImage && <button onClick={() => setHeroImage(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Hero Image</button>}
                         </div>
                       </div>
+
                       <div className="space-y-2 pt-4 border-t border-slate-800">
                         <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
                           Hero Darkness (Transparency)
@@ -464,25 +496,41 @@ export default function App() {
 
                   {editorTab === 'commerce' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Service Package', price: '199', image: '', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
-                        + Add Product / Service Package
+                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product / Package', desc: 'Product description goes here...', price: '199', image: '', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Product / Package
                       </button>
                       <div className="space-y-4 mt-4">
                         {products.map((product, index) => (
                           <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
                             <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium" placeholder="Product Name" />
-                            <div className="flex gap-2 items-center">
-                              <span className="text-slate-400 text-sm">$</span>
-                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Price" />
-                            </div>
+                            
                             <div>
-                              <label className="text-[10px] text-slate-400 uppercase">Product Image URL</label>
-                              <input type="text" value={product.image || ''} onChange={(e) => { const n = [...products]; n[index].image = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Title</label>
+                              <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium mt-1" placeholder="Product Title" />
                             </div>
+
                             <div>
-                              <label className="text-[10px] text-slate-400 uppercase">Stripe / PayPal Checkout Link</label>
-                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://buy.stripe.com/..." />
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Description</label>
+                              <textarea value={product.desc} onChange={(e) => { const n = [...products]; n[index].desc = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" rows={2} placeholder="Product description..." />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Price ($)</label>
+                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white mt-1" placeholder="99" />
+                            </div>
+
+                            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                              {product.image && <img src={product.image} className="w-12 h-12 object-cover rounded-md mb-2" />}
+                              <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Product Image</label>
+                              <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
+                                const n = [...products]; n[index].image = url; setProducts(n);
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                              {product.image && <button onClick={() => { const n = [...products]; n[index].image = ''; setProducts(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Image</button>}
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">PayPal / Stripe Checkout Link</label>
+                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" placeholder="https://paypal.me/... or Stripe Link" />
                             </div>
                           </div>
                         ))}
@@ -501,9 +549,14 @@ export default function App() {
                             <button onClick={() => setTeamList(teamList.filter(t => t.id !== member.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                             <input type="text" value={member.name} onChange={(e) => { const n = [...teamList]; n[index].name = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Full Name" />
                             <input type="text" value={member.role} onChange={(e) => { const n = [...teamList]; n[index].role = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Job Title / Role" />
-                            <div>
-                              <label className="text-[10px] text-slate-400 uppercase">Photo URL</label>
-                              <input type="text" value={member.image || ''} onChange={(e) => { const n = [...teamList]; n[index].image = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white mt-1" placeholder="https://..." />
+                            
+                            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                              {member.image && <img src={member.image} className="w-10 h-10 object-cover rounded-md mb-2" />}
+                              <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Team Member Photo</label>
+                              <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
+                                const n = [...teamList]; n[index].image = url; setTeamList(n);
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                              {member.image && <button onClick={() => { const n = [...teamList]; n[index].image = ''; setTeamList(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Photo</button>}
                             </div>
                           </div>
                         ))}
@@ -543,11 +596,11 @@ export default function App() {
                 )}
 
                 <div className="relative">
-                  {/* MASTER ENGINE ROUTER */}
+                  {/* MASTER ENGINE ROUTER WITH LOGO SIZE */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-                      logo: siteLogo, heroImage, heroOpacity, 
+                      logo: siteLogo, logoSize, heroImage, heroOpacity, 
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList

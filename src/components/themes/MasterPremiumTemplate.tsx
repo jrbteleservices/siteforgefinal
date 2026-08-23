@@ -12,7 +12,7 @@ interface MasterTemplateProps {
   config: IndustryConfig;
   businessName: string; phone: string; suburb: string; city: string; streetAddress: string; email: string;
   socials: { facebook: string; instagram: string; tiktok: string; };
-  colorPalette: string; logo?: string | null; heroImage?: string | null; heroOpacity: number;
+  colorPalette: string; logo?: string | null; logoSize?: number; heroImage?: string | null; heroOpacity: number;
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[];
@@ -20,7 +20,7 @@ interface MasterTemplateProps {
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-  logo, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
+  logo, logoSize = 40, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
   showProducts, products, activeSections, themeMode, teamList = [], faqList = []
 }: MasterTemplateProps) {
   
@@ -107,11 +107,11 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* HEADER */}
+      {/* HEADER WITH LOGO SIZING */}
       <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
-            <img src={logo} alt={businessName} className="h-10 object-contain" />
+            <img src={logo} alt={businessName} style={{ height: `${logoSize}px` }} className="object-contain transition-all" />
           ) : (
             <div className={`w-10 h-10 rounded-xl ${c.bg} flex items-center justify-center font-black text-xl text-white shadow-md group-hover:scale-105 transition`}>
               {businessName.charAt(0)}
