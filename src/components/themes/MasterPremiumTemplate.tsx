@@ -154,12 +154,12 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING ACTION WIDGETS STACK (CALL -> WHATSAPP -> CHATBOT AT VERY BOTTOM) */}
-      {activeSections.liveRequest && (
+      {/* FLOATING ACTION WIDGETS STACK (INDIVIDUALLY TOGGLEABLE PER ACTIVE SECTIONS) */}
+      {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
           
-          {/* COMPACT CHATBOT WINDOW POPUP WITH CLOSE (X) BUTTON */}
-          {chatOpen && (
+          {/* COMPACT CHATBOT WINDOW POPUP */}
+          {chatOpen && activeSections.showChatbotButton && (
             <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
               <div className="p-3.5 bg-blue-600 text-white flex justify-between items-center shadow-md">
                 <div className="flex items-center gap-2">
@@ -211,40 +211,48 @@ export default function MasterPremiumTemplate({
             </div>
           )}
 
-          {/* FLOATING ACTION STACK (CALL -> WHATSAPP -> CHATBOT) */}
+          {/* FLOATING ACTION STACK */}
           <div className="flex flex-col gap-2.5 items-end">
-            <a 
-              href={`tel:${phone}`}
-              className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-              title="Call Us Direct"
-            >
-              <Phone className="w-5 h-5" />
-              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                Call Us Now
-              </span>
-            </a>
-            <a 
-              href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
-              target="_blank" 
-              rel="noreferrer"
-              className="w-12 h-12 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-              title="Chat on WhatsApp"
-            >
-              <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
-              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                Chat on WhatsApp
-              </span>
-            </a>
-            <button 
-              onClick={() => setChatOpen(!chatOpen)}
-              className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-              title="Open Virtual Assistant"
-            >
-              <Bot className="w-6 h-6" />
-              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                Virtual Assistant
-              </span>
-            </button>
+            {activeSections.showCallButton && (
+              <a 
+                href={`tel:${phone}`}
+                className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+                title="Call Us Direct"
+              >
+                <Phone className="w-5 h-5" />
+                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                  Call Us Now
+                </span>
+              </a>
+            )}
+
+            {activeSections.showWhatsappButton && (
+              <a 
+                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
+                target="_blank" 
+                rel="noreferrer"
+                className="w-12 h-12 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+                title="Chat on WhatsApp"
+              >
+                <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
+                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                  Chat on WhatsApp
+                </span>
+              </a>
+            )}
+
+            {activeSections.showChatbotButton && (
+              <button 
+                onClick={() => setChatOpen(!chatOpen)}
+                className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+                title="Open Virtual Assistant"
+              >
+                <Bot className="w-6 h-6" />
+                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                  Virtual Assistant
+                </span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -308,24 +316,26 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* ABOUT SECTION (DEFAULT DISPLAY) */}
-      <section id="about" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}>
-        <div className="flex flex-col gap-6">
-          <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest`}>ABOUT US</h2>
-          <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Committed to Excellence in {suburb}</h3>
-          <p className={`${textMuted} text-base leading-relaxed`}>
-            {businessName} delivers industry-leading standards across {city} and surrounding regions. With a focus on precision, reliability, and client satisfaction, our experienced team ensures exceptional results on every engagement.
-          </p>
-          <div className="flex gap-4 pt-2">
-            <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>
-              Get in Touch
-            </a>
+      {/* ABOUT SECTION */}
+      {activeSections.about && (
+        <section id="about" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}>
+          <div className="flex flex-col gap-6">
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest`}>ABOUT US</h2>
+            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Committed to Excellence in {suburb}</h3>
+            <p className={`${textMuted} text-base leading-relaxed`}>
+              {businessName} delivers industry-leading standards across {city} and surrounding regions. With a focus on precision, reliability, and client satisfaction, our experienced team ensures exceptional results on every engagement.
+            </p>
+            <div className="flex gap-4 pt-2">
+              <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>
+                Get in Touch
+              </a>
+            </div>
           </div>
-        </div>
-        <div className={`h-80 rounded-3xl ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-slate-200'} flex items-center justify-center font-bold text-slate-500 overflow-hidden shadow-lg`}>
-          <img src={displayHero} alt="About Us" className="w-full h-full object-cover opacity-80" />
-        </div>
-      </section>
+          <div className={`h-80 rounded-3xl ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-slate-200'} flex items-center justify-center font-bold text-slate-500 overflow-hidden shadow-lg`}>
+            <img src={displayHero} alt="About Us" className="w-full h-full object-cover opacity-80" />
+          </div>
+        </section>
+      )}
 
       {/* SERVICES SECTION */}
       {activeSections.services && (
@@ -355,7 +365,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* WHY US SECTION (TOGGLEABLE) */}
+      {/* WHY US SECTION */}
       {activeSections.whyUs && (
         <section id="whyUs" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -382,7 +392,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PROJECTS SECTION (TOGGLEABLE) */}
+      {/* PROJECTS SECTION */}
       {activeSections.projects && (
         <section id="projects" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -413,7 +423,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* REVIEWS SECTION (TOGGLEABLE) */}
+      {/* REVIEWS SECTION */}
       {activeSections.reviews && (
         <section id="reviews" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -434,7 +444,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PRODUCTS & COMMERCE STORE SECTION (TOGGLEABLE) */}
+      {/* PRODUCTS & COMMERCE STORE SECTION */}
       {showProducts && activeSections.products && activeProducts.length > 0 && (
         <section id="products" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -473,7 +483,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* EXECUTIVE TEAM SECTION (TOGGLEABLE) */}
+      {/* EXECUTIVE TEAM SECTION */}
       {activeSections.team && (
         <section id="team" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -498,7 +508,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* FAQ SECTION (TOGGLEABLE) */}
+      {/* FAQ SECTION */}
       {activeSections.faq && (
         <section className={`py-24 px-8 max-w-4xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center mb-16">
@@ -516,105 +526,107 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* CONTACT SECTION (DEFAULT DISPLAY) */}
-      <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
-        <div className="flex flex-col gap-6">
-          <div>
-            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>PARTNERSHIPS & INQUIRIES</h2>
-            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Initiate a Discussion</h3>
-            <p className={`${textMuted} text-lg mt-4 leading-relaxed`}>Provide your details below to schedule an initial consultation with our executive team.</p>
-          </div>
-
-          <div className={`flex flex-col gap-6 text-sm ${textMuted} mt-6 font-medium`}>
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Phone className="w-5 h-5" /></div>
-              <span className={textMain}>{phone}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Mail className="w-5 h-5" /></div>
-              <span className={textMain}>{email}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
-              <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
+      {/* CONTACT SECTION */}
+      {activeSections.contact && (
+        <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>PARTNERSHIPS & INQUIRIES</h2>
+              <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Initiate a Discussion</h3>
+              <p className={`${textMuted} text-lg mt-4 leading-relaxed`}>Provide your details below to schedule an initial consultation with our executive team.</p>
             </div>
 
-            {locations.map((loc) => (
-              <div key={loc.id} className="flex items-center gap-4 border-t border-slate-800 pt-4">
+            <div className={`flex flex-col gap-6 text-sm ${textMuted} mt-6 font-medium`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Phone className="w-5 h-5" /></div>
+                <span className={textMain}>{phone}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Mail className="w-5 h-5" /></div>
+                <span className={textMain}>{email}</span>
+              </div>
+              <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
-                <div>
-                  <div className="font-bold text-white">{loc.name}</div>
-                  <div className={textMuted}>{loc.address} ({loc.phone})</div>
-                </div>
+                <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
               </div>
-            ))}
 
-            {operatingHours.length > 0 && (
-              <div className="flex items-start gap-4 border-t border-slate-800 pt-4">
-                <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Clock className="w-5 h-5" /></div>
-                <div className="space-y-1">
-                  <div className="font-bold text-white uppercase tracking-wider text-xs">Hours of Operation</div>
-                  {operatingHours.map((oh) => (
-                    <div key={oh.id} className="text-xs flex gap-2"><span className="font-semibold">{oh.days}:</span> <span className={textMuted}>{oh.hours}</span></div>
-                  ))}
+              {locations.map((loc) => (
+                <div key={loc.id} className="flex items-center gap-4 border-t border-slate-800 pt-4">
+                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
+                  <div>
+                    <div className="font-bold text-white">{loc.name}</div>
+                    <div className={textMuted}>{loc.address} ({loc.phone})</div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ))}
 
-          <div className="flex items-center gap-3 pt-2">
-            {socials.instagram && (
-              <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              </a>
-            )}
-            {socials.tiktok && (
-              <a href={socials.tiktok} target="_blank" rel="noreferrer" title="TikTok" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-slate-900 hover:text-white transition`}>
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-1.02-.97-.5-1.81-1.22-2.48-2.08v9.92c-.03 2.05-1.12 3.99-2.92 5.04-1.8 1.05-4.08 1.05-5.88-.02-1.8-1.07-2.93-3.02-2.95-5.09-.02-2.07 1.07-4.04 2.85-5.12 1.78-1.08 4.05-1.06 5.83.05.02.39.04.78.04 1.17 0 1.01-.36 1.99-.99 2.74-.63.75-1.51 1.2-2.51 1.25-1 .05-1.97-.29-2.67-1-.7-.71-1.04-1.68-1.01-2.67.03-.99.41-1.92 1.1-2.61.69-.69 1.62-1.07 2.61-1.1 1.3-.04 2.6-.01 3.9-.02z"/></svg>
-              </a>
-            )}
-            {socials.facebook && (
-              <a href={socials.facebook} target="_blank" rel="noreferrer" title="Facebook" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-blue-600 hover:text-white transition`}>
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.5 5 15.5 5H18V0h-3.808C10.59 0 9 1.581 9 4.75V8z"/></svg>
-              </a>
-            )}
-          </div>
-        </div>
-
-        <div className={`${bgCard} border ${borderMuted} p-10 rounded-3xl shadow-xl`}>
-          {submitted ? (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-10 rounded-2xl text-center flex flex-col items-center gap-4 h-full justify-center">
-              <CheckCircle className="w-14 h-14 text-emerald-500" />
-              <h4 className="text-xl font-bold text-emerald-500">Inquiry Received</h4>
-              <p className={`${textMuted} text-sm`}>Thank you. The team at {businessName} will contact you shortly.</p>
+              {operatingHours.length > 0 && (
+                <div className="flex items-start gap-4 border-t border-slate-800 pt-4">
+                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Clock className="w-5 h-5" /></div>
+                  <div className="space-y-1">
+                    <div className="font-bold text-white uppercase tracking-wider text-xs">Hours of Operation</div>
+                    {operatingHours.map((oh) => (
+                      <div key={oh.id} className="text-xs flex gap-2"><span className="font-semibold">{oh.days}:</span> <span className={textMuted}>{oh.hours}</span></div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <form onSubmit={handleLeadSubmit} className="flex flex-col gap-5">
-              <div>
-                <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Full Name</label>
-                <input type="text" required value={leadName} onChange={(e) => setLeadName(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+
+            <div className="flex items-center gap-3 pt-2">
+              {socials.instagram && (
+                <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+              )}
+              {socials.tiktok && (
+                <a href={socials.tiktok} target="_blank" rel="noreferrer" title="TikTok" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-slate-900 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-1.02-.97-.5-1.81-1.22-2.48-2.08v9.92c-.03 2.05-1.12 3.99-2.92 5.04-1.8 1.05-4.08 1.05-5.88-.02-1.8-1.07-2.93-3.02-2.95-5.09-.02-2.07 1.07-4.04 2.85-5.12 1.78-1.08 4.05-1.06 5.83.05.02.39.04.78.04 1.17 0 1.01-.36 1.99-.99 2.74-.63.75-1.51 1.2-2.51 1.25-1 .05-1.97-.29-2.67-1-.7-.71-1.04-1.68-1.01-2.67.03-.99.41-1.92 1.1-2.61.69-.69 1.62-1.07 2.61-1.1 1.3-.04 2.6-.01 3.9-.02z"/></svg>
+                </a>
+              )}
+              {socials.facebook && (
+                <a href={socials.facebook} target="_blank" rel="noreferrer" title="Facebook" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-blue-600 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.5 5 15.5 5H18V0h-3.808C10.59 0 9 1.581 9 4.75V8z"/></svg>
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div className={`${bgCard} border ${borderMuted} p-10 rounded-3xl shadow-xl`}>
+            {submitted ? (
+              <div className="bg-emerald-500/10 border border-emerald-500/20 p-10 rounded-2xl text-center flex flex-col items-center gap-4 h-full justify-center">
+                <CheckCircle className="w-14 h-14 text-emerald-500" />
+                <h4 className="text-xl font-bold text-emerald-500">Inquiry Received</h4>
+                <p className={`${textMuted} text-sm`}>Thank you. The team at {businessName} will contact you shortly.</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="flex flex-col gap-5">
                 <div>
-                  <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Email Address</label>
-                  <input type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+                  <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Full Name</label>
+                  <input type="text" required value={leadName} onChange={(e) => setLeadName(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Email Address</label>
+                    <input type="email" value={leadEmail} onChange={(e) => setLeadEmail(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+                  </div>
+                  <div>
+                    <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Phone Number</label>
+                    <input type="tel" required value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+                  </div>
                 </div>
                 <div>
-                  <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Phone Number</label>
-                  <input type="tel" required value={leadPhone} onChange={(e) => setLeadPhone(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
+                  <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Project Requirements</label>
+                  <textarea rows={4} required value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
                 </div>
-              </div>
-              <div>
-                <label className={`text-xs font-bold ${textMuted} uppercase tracking-wider`}>Project Requirements</label>
-                <textarea rows={4} required value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)} className={`mt-2 w-full ${inputBg} border ${borderMuted} p-4 text-sm ${textMain} rounded-xl focus:outline-none focus:${c.border}`} />
-              </div>
-              <button type="submit" disabled={loading} className={`w-full ${c.bg} ${c.hover} text-white font-black uppercase tracking-widest py-5 rounded-xl text-sm transition mt-2`}>
-                {loading ? 'Processing...' : 'Submit Inquiry'}
-              </button>
-            </form>
-          )}
-        </div>
-      </footer>
+                <button type="submit" disabled={loading} className={`w-full ${c.bg} ${c.hover} text-white font-black uppercase tracking-widest py-5 rounded-xl text-sm transition mt-2`}>
+                  {loading ? 'Processing...' : 'Submit Inquiry'}
+                </button>
+              </form>
+            )}
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

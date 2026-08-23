@@ -48,35 +48,36 @@ export default function App() {
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
-  // Additional Locations & Operating Hours State
-  const [locations, setLocations] = useState<LocationItem[]>([
-    { id: '1', name: 'Headquarters', address: '123 Trade Avenue, Melbourne VIC', phone: '+61 3 9111 2222', email: 'melbourne@apex.com.au' }
-  ]);
+  // Additional Locations (Strictly empty by default) & Operating Hours State
+  const [locations, setLocations] = useState<LocationItem[]>([]);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
     { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
     { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
   ]);
 
-  // Media & Logo Sizing Slider State
+  // Media & Logo Sizing Slider State (Max expanded to 150px)
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState<number>(40); 
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
-  // Layout Section Toggles (Home, About, Services, Contact active by default; others toggleable)
+  // Layout Section Toggles (Granular individual toggles for Call, WhatsApp, and Virtual Bot default to OFF)
   const [activeSections, setActiveSections] = useState({
     hero: true,
-    about: true,        // Toggleable About Section
-    liveRequest: true,
+    about: true,
     services: true,
-    whyUs: false,       // Default off (toggleable in sidebar)
-    projects: false,    // Default off (toggleable in sidebar)
-    reviews: false,     // Default off (toggleable in sidebar)
-    products: false,    // Default off (toggleable in sidebar)
-    team: false,        // Default off (toggleable in sidebar)
-    faq: false,         // Default off (toggleable in sidebar)
-    contact: true
+    whyUs: false,
+    projects: false,
+    reviews: false,
+    products: false,
+    team: false,
+    faq: false,
+    contact: true,
+    // Individual floating widget toggles (Default OFF)
+    showCallButton: false,
+    showWhatsappButton: false,
+    showChatbotButton: false
   });
 
   // Headers State
@@ -305,7 +306,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* ADDITIONAL LOCATIONS MANAGER */}
+                      {/* ADDITIONAL LOCATIONS MANAGER (DEFAULT EMPTY) */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <div className="flex justify-between items-center">
                           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Additional Locations</h4>
@@ -495,13 +496,14 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* LOGO SIZE SLIDER */}
+                      {/* LOGO SIZE SLIDER (Up to 150px, stable at 100px) */}
                       <div className="space-y-2 pt-2">
                         <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
                           Logo Size (Height)
                           <span className="text-blue-400">{logoSize}px</span>
                         </label>
-                        <input type="range" min="20" max="90" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
+                        <input type="range" min="20" max="150" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
+                        <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px (Max 150px)</span>
                       </div>
 
                       <div className="space-y-2 pt-4 border-t border-slate-800">
@@ -525,16 +527,31 @@ export default function App() {
 
                   {editorTab === 'layout' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules.</p>
+                      <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules and floating action widgets.</p>
                       
-                      <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-blue-500/30">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">Floating WhatsApp & Call Bar</span>
-                          <span className="text-[10px] text-slate-400">Sticky quick-action buttons on mobile/desktop</span>
+                      <div className="space-y-3 border-b border-slate-800 pb-5 mb-2">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Floating Sticky Actions (Default Off)</h4>
+                        
+                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                          <span className="text-sm font-medium text-white">Call Us Now Button</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, showCallButton: !activeSections.showCallButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showCallButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showCallButton ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
                         </div>
-                        <button onClick={() => setActiveSections({ ...activeSections, liveRequest: !activeSections.liveRequest })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.liveRequest ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.liveRequest ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </button>
+
+                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                          <span className="text-sm font-medium text-white">Chat on WhatsApp Button</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, showWhatsappButton: !activeSections.showWhatsappButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showWhatsappButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showWhatsappButton ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                          <span className="text-sm font-medium text-white">Virtual Assistant (AI Bot)</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, showChatbotButton: !activeSections.showChatbotButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showChatbotButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showChatbotButton ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
