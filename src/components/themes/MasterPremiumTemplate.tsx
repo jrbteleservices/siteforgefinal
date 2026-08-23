@@ -19,13 +19,14 @@ interface MasterTemplateProps {
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[]; locations?: LocationItem[]; operatingHours?: OperatingHourItem[];
   showSiteForgeBranding?: boolean;
+  additionalLegalInfo?: string;
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, logoSize = 40, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
   showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = [],
-  showSiteForgeBranding = true
+  showSiteForgeBranding = true, additionalLegalInfo = ''
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -35,7 +36,7 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- INTELLIGENT RECEPTIONIST CHATBOT & DROPDOWN STATE ---
+  // --- CHATBOT & DROPDOWN STATE ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
@@ -59,7 +60,6 @@ export default function MasterPremiumTemplate({
   ];
   const activeFaqs = faqList.length > 0 ? faqList : defaultFaqs;
 
-  // --- INTELLIGENT RECEPTIONIST ENGINE ---
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
@@ -76,41 +76,25 @@ export default function MasterPremiumTemplate({
 
       const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package') || lower.includes('how much'));
       if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes(matchedProduct.name.toLowerCase()))) {
-        botReply = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} Would you like me to arrange a callback so we can get this started for you?`;
+        botReply = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} Would you like me to arrange a callback?`;
       } 
-      else if (lower.includes('service') || lower.includes('offer') || lower.includes('what do you do') || lower.includes('specialty')) {
+      else if (lower.includes('service') || lower.includes('offer') || lower.includes('what do you do')) {
         const serviceTitles = activeServices.map(s => s.title).join(', ');
-        botReply = `We specialize in: ${serviceTitles}. Would you like me to have our team contact you with more details?`;
+        botReply = `We specialize in: ${serviceTitles}.`;
       } 
-      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time') || lower.includes('day') || lower.includes('schedule')) {
-        if (operatingHours.length > 0) {
-          const schedule = operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ');
-          botReply = `Our operating schedule is: ${schedule}.`;
-        } else {
-          botReply = `We operate Monday through Saturday with standard business hours. Feel free to reach out anytime!`;
-        }
+      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time')) {
+        botReply = operatingHours.length > 0 ? operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ') : 'We operate Monday through Saturday with standard business hours.';
       } 
-      else if (lower.includes('location') || lower.includes('address') || lower.includes('where') || lower.includes('suburb')) {
+      else if (lower.includes('location') || lower.includes('address') || lower.includes('where')) {
         botReply = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
       } 
       else {
-        botReply = `I'd love to make sure you get the exact answer to that! Let me have a team member contact you directly. What is your name and phone number?`;
-      }
-
-      if (lower.includes('my name is') || lower.includes('call me') || /\d{8,}/.test(userText)) {
-        await supabase.from('leads').insert([{
-          owner_id: '00000000-0000-0000-0000-000000000000',
-          name: 'Chat Visitor',
-          phone: userText.replace(/[^0-9+]/g, '') || phone,
-          email: email,
-          message: `[AI Concierge Lead] Inquiry: "${userText}"`
-        }]);
-        botReply = `Thank you! I have securely recorded your details and notified our team. Someone will be in touch with you shortly.`;
+        botReply = `I'd love to make sure you get the exact answer! What is your name and phone number so our team can contact you?`;
       }
 
       setChatMessages([...updatedMessages, { sender: 'bot', text: botReply }]);
     } catch (err) {
-      setChatMessages([...updatedMessages, { sender: 'bot', text: `Please give us a call directly at ${phone} and our team will be delighted to assist!` }]);
+      setChatMessages([...updatedMessages, { sender: 'bot', text: `Please give us a call directly at ${phone}.` }]);
     } finally {
       setChatLoading(false);
     }
@@ -118,9 +102,8 @@ export default function MasterPremiumTemplate({
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from('leads').insert([{
-        owner_id: user?.id || '00000000-0000-0000-0000-000000000000',
+        owner_id: '00000000-0000-0000-0000-000000000000',
         name: leadName, email: leadEmail || 'no-email@provided.com', phone: leadPhone,
         message: `[${config.name} Inquiry - ${suburb}] ${leadMessage}`
     }]);
@@ -157,7 +140,7 @@ export default function MasterPremiumTemplate({
         <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-2.5 items-end">
           
           {chatOpen && activeSections.showChatbotButton && (
-            <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
               <div className="p-3.5 bg-blue-600 text-white flex justify-between items-center shadow-md">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold">
@@ -189,8 +172,8 @@ export default function MasterPremiumTemplate({
                   type="text" 
                   value={chatInput} 
                   onChange={(e) => setChatInput(e.target.value)} 
-                  placeholder="Ask a question or request a quote..." 
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                  placeholder="Ask a question..." 
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none" 
                 />
                 <button type="submit" className={`${c.bg} ${c.hover} text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center`}>
                   <Send className="w-3.5 h-3.5" />
@@ -207,43 +190,18 @@ export default function MasterPremiumTemplate({
 
           <div className="flex flex-col gap-2.5 items-end">
             {activeSections.showCallButton && (
-              <a 
-                href={`tel:${phone}`}
-                className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-                title="Call Us Direct"
-              >
+              <a href={`tel:${phone}`} className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110" title="Call Us Direct">
                 <Phone className="w-5 h-5" />
-                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                  Call Us Now
-                </span>
               </a>
             )}
-
             {activeSections.showWhatsappButton && (
-              <a 
-                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
-                target="_blank" 
-                rel="noreferrer"
-                className="w-12 h-12 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-                title="Chat on WhatsApp"
-              >
+              <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="w-12 h-12 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110" title="WhatsApp">
                 <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
-                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                  Chat on WhatsApp
-                </span>
               </a>
             )}
-
             {activeSections.showChatbotButton && (
-              <button 
-                onClick={() => setChatOpen(!chatOpen)}
-                className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-                title="Open Virtual Assistant"
-              >
+              <button onClick={() => setChatOpen(!chatOpen)} className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110" title="Virtual Assistant">
                 <Bot className="w-6 h-6" />
-                <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                  Virtual Assistant
-                </span>
               </button>
             )}
           </div>
@@ -271,34 +229,19 @@ export default function MasterPremiumTemplate({
 
           {hasMoreItems && (
             <div className="relative">
-              <button 
-                onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
-                className={`flex items-center gap-1 hover:${c.text} transition focus:outline-none uppercase font-bold`}
-              >
+              <button onClick={() => setMoreDropdownOpen(!moreDropdownOpen)} className={`flex items-center gap-1 hover:${c.text} transition focus:outline-none uppercase font-bold`}>
                 <span>More</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {moreDropdownOpen && (
-                <div className={`absolute top-full right-0 mt-2 w-48 ${bgCard} border ${borderMuted} rounded-xl shadow-2xl py-2 flex flex-col z-50 animate-in fade-in slide-in-from-top-2`}>
-                  {activeSections.whyUs && (
-                    <a href="#whyUs" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Why Us</a>
-                  )}
-                  {activeSections.projects && (
-                    <a href="#projects" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Projects</a>
-                  )}
-                  {activeSections.reviews && (
-                    <a href="#reviews" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Reviews</a>
-                  )}
-                  {showProducts && activeSections.products && (
-                    <a href="#products" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Products</a>
-                  )}
-                  {activeSections.team && (
-                    <a href="#team" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Team</a>
-                  )}
-                  {activeSections.faq && (
-                    <a href="#faq" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>FAQ</a>
-                  )}
+                <div className={`absolute top-full right-0 mt-2 w-48 ${bgCard} border ${borderMuted} rounded-xl shadow-2xl py-2 flex flex-col z-50`}>
+                  {activeSections.whyUs && <a href="#whyUs" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>Why Us</a>}
+                  {activeSections.projects && <a href="#projects" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>Projects</a>}
+                  {activeSections.reviews && <a href="#reviews" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>Reviews</a>}
+                  {showProducts && activeSections.products && <a href="#products" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>Products</a>}
+                  {activeSections.team && <a href="#team" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>Team</a>}
+                  {activeSections.faq && <a href="#faq" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10`}>FAQ</a>}
                 </div>
               )}
             </div>
@@ -306,72 +249,43 @@ export default function MasterPremiumTemplate({
         </nav>
 
         <div className="flex items-center gap-4">
-          <a href={`tel:${phone}`} className={`hidden sm:flex items-center gap-2 font-bold text-sm ${textMain} hover:${c.text} transition`}>
-            {phone}
-          </a>
-          <a href="#contact" className={`${c.bg} ${c.hover} text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wide transition shadow-lg`}>
-            Consultation
-          </a>
+          <a href={`tel:${phone}`} className={`hidden sm:flex items-center gap-2 font-bold text-sm ${textMain} hover:${c.text} transition`}>{phone}</a>
+          <a href="#contact" className={`${c.bg} ${c.hover} text-white px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wide transition shadow-lg`}>Consultation</a>
         </div>
       </header>
 
       {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-3 py-2 flex justify-around items-center shadow-2xl`}>
-        <a 
-          href="#hero" 
-          onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
-          className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}
-        >
-          <Home className="w-4 h-4" />
-          <span>Home</span>
+        <a href="#hero" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+          <Home className="w-4 h-4" /><span>Home</span>
         </a>
         <a href="#about" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-          <User className="w-4 h-4" />
-          <span>About</span>
+          <User className="w-4 h-4" /><span>About</span>
         </a>
         {activeSections.services && (
           <a href="#services" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-            <Briefcase className="w-4 h-4" />
-            <span>Services</span>
+            <Briefcase className="w-4 h-4" /><span>Services</span>
           </a>
         )}
         {activeSections.contact && (
           <a href="#contact" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-            <MailIcon className="w-4 h-4" />
-            <span>Contact</span>
+            <MailIcon className="w-4 h-4" /><span>Contact</span>
           </a>
         )}
         {hasMoreItems && (
-          <button 
-            onClick={() => setMobileMoreOpen(!mobileMoreOpen)} 
-            className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition focus:outline-none`}
-          >
-            <Menu className="w-4 h-4" />
-            <span>More</span>
+          <button onClick={() => setMobileMoreOpen(!mobileMoreOpen)} className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition focus:outline-none`}>
+            <Menu className="w-4 h-4" /><span>More</span>
           </button>
         )}
 
-        {/* MOBILE MORE POPUP MENU */}
         {mobileMoreOpen && (
-          <div className={`absolute bottom-full left-0 right-0 mb-2 mx-4 ${bgCard} border ${borderMuted} rounded-2xl shadow-2xl py-3 px-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2`}>
-            {activeSections.whyUs && (
-              <a href="#whyUs" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Why Us</a>
-            )}
-            {activeSections.projects && (
-              <a href="#projects" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Projects</a>
-            )}
-            {activeSections.reviews && (
-              <a href="#reviews" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Reviews</a>
-            )}
-            {showProducts && activeSections.products && (
-              <a href="#products" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Products</a>
-            )}
-            {activeSections.team && (
-              <a href="#team" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Team</a>
-            )}
-            {activeSections.faq && (
-              <a href="#faq" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>FAQ</a>
-            )}
+          <div className={`absolute bottom-full left-0 right-0 mb-2 mx-4 ${bgCard} border ${borderMuted} rounded-2xl shadow-2xl py-3 px-2 flex flex-col gap-1 z-50`}>
+            {activeSections.whyUs && <a href="#whyUs" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>Why Us</a>}
+            {activeSections.projects && <a href="#projects" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>Projects</a>}
+            {activeSections.reviews && <a href="#reviews" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>Reviews</a>}
+            {showProducts && activeSections.products && <a href="#products" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>Products</a>}
+            {activeSections.team && <a href="#team" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>Team</a>}
+            {activeSections.faq && <a href="#faq" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} rounded-xl`}>FAQ</a>}
           </div>
         )}
       </nav>
@@ -380,25 +294,21 @@ export default function MasterPremiumTemplate({
       {activeSections.hero && (
         <section className="relative overflow-hidden min-h-[650px] flex items-center">
           <div className="absolute inset-0 bg-cover bg-center transition-all duration-500 z-0" style={{ backgroundImage: `url(${displayHero})` }}>
-            <div className="absolute inset-0 bg-slate-950 mix-blend-multiply transition-opacity duration-300" style={{ opacity: overlayOpacity }}></div>
+            <div className="absolute inset-0 bg-slate-950 mix-blend-multiply opacity-50"></div>
           </div>
-
           <div className="relative z-10 px-8 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
             <div className="flex flex-col gap-6">
-              <div className={`inline-flex items-center gap-2 ${c.lightBg} border ${c.border} border-opacity-30 px-4 py-1.5 rounded-full ${c.text} text-xs font-bold w-max uppercase tracking-widest backdrop-blur-sm`}>
+              <div className={`inline-flex items-center gap-2 ${c.lightBg} border ${c.border} border-opacity-30 px-4 py-1.5 rounded-full ${c.text} text-xs font-bold w-max uppercase tracking-widest`}>
                 <Activity className="w-4 h-4" /> {config.designTag}
               </div>
               <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white leading-tight">
                 {businessName.toUpperCase()}: <span className={c.text}>{suburb.toUpperCase()}</span>.
               </h1>
-              <p className="text-slate-200 text-lg max-w-xl drop-shadow-md leading-relaxed">
+              <p className="text-slate-200 text-lg max-w-xl leading-relaxed">
                 {config.heroDefaultSubtitle} Operating across {city} with uncompromising quality and precision standards.
               </p>
-              
               <div className="flex flex-wrap gap-4 pt-4">
-                <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-4 px-10 rounded-xl text-sm transition shadow-xl`}>
-                  Engage Our Team
-                </a>
+                <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-4 px-10 rounded-xl text-sm transition shadow-xl`}>Engage Our Team</a>
               </div>
             </div>
           </div>
@@ -415,9 +325,7 @@ export default function MasterPremiumTemplate({
               {businessName} delivers industry-leading standards across {city} and surrounding regions. With a focus on precision, reliability, and client satisfaction, our experienced team ensures exceptional results on every engagement.
             </p>
             <div className="flex gap-4 pt-2">
-              <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>
-                Get in Touch
-              </a>
+              <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>Get in Touch</a>
             </div>
           </div>
           <div className={`h-80 rounded-3xl ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-slate-200'} flex items-center justify-center font-bold text-slate-500 overflow-hidden shadow-lg`}>
@@ -436,12 +344,12 @@ export default function MasterPremiumTemplate({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {activeServices.map((service) => (
-              <div key={service.id} className={`${bgCard} border ${borderMuted} hover:${c.border} shadow-sm hover:shadow-xl rounded-2xl overflow-hidden transition-all flex flex-col group`}>
+              <div key={service.id} className={`${bgCard} border ${borderMuted} hover:${c.border} shadow-sm rounded-2xl overflow-hidden transition-all flex flex-col group`}>
                 {service.image ? (
                   <div className="h-56 w-full flex-shrink-0"><img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
                 ) : (
                   <div className={`h-40 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center border-b ${borderMuted}`}>
-                    <ArrowRight className={`w-10 h-10 ${textMuted} group-hover:${c.text} transition group-hover:translate-x-2`} />
+                    <ArrowRight className={`w-10 h-10 ${textMuted} group-hover:${c.text} transition`} />
                   </div>
                 )}
                 <div className="p-8 flex flex-col gap-3 flex-1">
@@ -493,8 +401,7 @@ export default function MasterPremiumTemplate({
               <div key={proj.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-md flex flex-col h-full group`}>
                 {proj.image ? (
                   <div className="h-64 w-full relative flex-shrink-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-slate-900/30 z-10 group-hover:bg-slate-900/10 transition duration-500"></div>
-                    <img src={proj.image} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500 relative z-0" />
+                    <img src={proj.image} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   </div>
                 ) : (
                   <div className={`h-64 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm flex-shrink-0`}>Media Showcase</div>
@@ -556,12 +463,7 @@ export default function MasterPremiumTemplate({
                     {prod.desc && <p className={`${textMuted} text-xs mt-2 leading-relaxed`}>{prod.desc}</p>}
                     <div className={`text-3xl font-black ${c.text} mt-4`}>${prod.price}</div>
                   </div>
-                  <a 
-                    href={prod.checkoutUrl || '#contact'} 
-                    target={prod.checkoutUrl ? "_blank" : "_self"} 
-                    rel="noreferrer" 
-                    className={`w-full text-center ${c.bg} ${c.hover} text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md`}
-                  >
+                  <a href={prod.checkoutUrl || '#contact'} target={prod.checkoutUrl ? "_blank" : "_self"} rel="noreferrer" className={`w-full text-center ${c.bg} ${c.hover} text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md`}>
                     <span>Secure Checkout</span>
                     {prod.checkoutUrl && <ExternalLink className="w-3.5 h-3.5" />}
                   </a>
@@ -638,46 +540,6 @@ export default function MasterPremiumTemplate({
                 <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
                 <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
               </div>
-
-              {locations.map((loc) => (
-                <div key={loc.id} className="flex items-center gap-4 border-t border-slate-800 pt-4">
-                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
-                  <div>
-                    <div className="font-bold text-white">{loc.name}</div>
-                    <div className={textMuted}>{loc.address} ({loc.phone})</div>
-                  </div>
-                </div>
-              ))}
-
-              {operatingHours.length > 0 && (
-                <div className="flex items-start gap-4 border-t border-slate-800 pt-4">
-                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Clock className="w-5 h-5" /></div>
-                  <div className="space-y-1">
-                    <div className="font-bold text-white uppercase tracking-wider text-xs">Hours of Operation</div>
-                    {operatingHours.map((oh) => (
-                      <div key={oh.id} className="text-xs flex gap-2"><span className="font-semibold">{oh.days}:</span> <span className={textMuted}>{oh.hours}</span></div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              {socials.instagram && (
-                <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                </a>
-              )}
-              {socials.tiktok && (
-                <a href={socials.tiktok} target="_blank" rel="noreferrer" title="TikTok" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-slate-900 hover:text-white transition`}>
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-1.02-.97-.5-1.81-1.22-2.48-2.08v9.92c-.03 2.05-1.12 3.99-2.92 5.04-1.8 1.05-4.08 1.05-5.88-.02-1.8-1.07-2.93-3.02-2.95-5.09-.02-2.07 1.07-4.04 2.85-5.12 1.78-1.08 4.05-1.06 5.83.05.02.39.04.78.04 1.17 0 1.01-.36 1.99-.99 2.74-.63.75-1.51 1.2-2.51 1.25-1 .05-1.97-.29-2.67-1-.7-.71-1.04-1.68-1.01-2.67.03-.99.41-1.92 1.1-2.61.69-.69 1.62-1.07 2.61-1.1 1.3-.04 2.6-.01 3.9-.02z"/></svg>
-                </a>
-              )}
-              {socials.facebook && (
-                <a href={socials.facebook} target="_blank" rel="noreferrer" title="Facebook" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-blue-600 hover:text-white transition`}>
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.5 5 15.5 5H18V0h-3.808C10.59 0 9 1.581 9 4.75V8z"/></svg>
-                </a>
-              )}
             </div>
           </div>
 
@@ -714,7 +576,6 @@ export default function MasterPremiumTemplate({
               </form>
             )}
 
-            {/* ADDITIONAL LEGAL INFO / ABN FOOTER DISPLAY */}
             {additionalLegalInfo && (
               <div className="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500 font-medium">
                 {additionalLegalInfo}
