@@ -154,7 +154,7 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING ACTION WIDGETS STACK (INDIVIDUALLY TOGGLEABLE PER ACTIVE SECTIONS) */}
+      {/* FLOATING ACTION WIDGETS STACK (INDIVIDUALLY CONTROLLED) */}
       {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
           
@@ -257,8 +257,8 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* HEADER WITH FIXED NAVIGATION (Home | About | Services | Contact) */}
-      <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
+      {/* STICKY HEADER (Sticks throughout website while scrolling) */}
+      <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
             <img src={logo} alt={businessName} style={{ height: `${logoSize}px` }} className="object-contain transition-all" />
