@@ -163,7 +163,7 @@ export default function App() {
     // 2. Save it securely to local storage
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
-    // 3. IMMEDIATELY open the actual working URL (bypassing timeouts and confirm dialogs)
+    // 3. IMMEDIATELY open the actual working URL
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     const newTab = window.open(actualWorkingUrl, '_blank');
     
@@ -179,17 +179,32 @@ export default function App() {
     }, 800); 
   };
 
-  // --- EARLY RETURN FOR LIVE PUBLISHED TAB ---
-  // If the URL contains ?published=true, ONLY render the live website. No builder UI.
-  if (isPublishedView && publishedData) {
-    const currentConfig = AUSTRALIAN_THEMES[publishedData.selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
+  // --- EARLY RETURN FOR LIVE PUBLISHED TAB (FIXED FOR CUSTOMERS) ---
+  // If the URL contains ?published=true, NEVER show the login screen.
+  if (isPublishedView) {
+    // If publishedData exists (you testing it), use it. 
+    // If it's null (a customer opening the link), use the default active state variables.
+    const dataToRender = publishedData ? publishedData.templateProps : {
+      businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+      logo: siteLogo, logoSize, heroImage, heroOpacity, 
+      headers, servicesList, projectsList, reviewsList,
+      showProducts: activeSections.products, 
+      products, activeSections, themeMode, teamList, faqList,
+      locations, operatingHours, showSiteForgeBranding,
+      additionalLegalInfo
+    };
+
+    const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
+    const currentConfig = AUSTRALIAN_THEMES[themeToRender] || AUSTRALIAN_THEMES['luxury_builder'];
+
     return (
       <div className="w-full min-h-screen overflow-y-auto bg-slate-50">
-        <MasterPremiumTemplate config={currentConfig} {...publishedData.templateProps} />
+        <MasterPremiumTemplate config={currentConfig} {...dataToRender as any} />
       </div>
     );
   }
 
+  // --- AUTH GUARD (Only applies if they are NOT on the ?published=true link) ---
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
   if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
 
@@ -340,7 +355,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* ADDITIONAL LEGAL INFO (ABN / GST Footer Input) */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
                         <div>
