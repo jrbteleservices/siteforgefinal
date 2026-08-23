@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown, Home, User, Briefcase, Menu } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -35,7 +35,7 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- INTELLIGENT RECEPTIONIST CHATBOT & DROPDOWN STATE ---
+  // --- INTELLIGENT RECEPTIONIST CHATBOT & MOBILE/DESKTOP DROPDOWN STATE ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
@@ -43,6 +43,7 @@ export default function MasterPremiumTemplate({
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
@@ -73,17 +74,14 @@ export default function MasterPremiumTemplate({
       let botReply = '';
       const lower = userText.toLowerCase();
 
-      // Check Products / Pricing
       const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package') || lower.includes('how much'));
       if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes(matchedProduct.name.toLowerCase()))) {
         botReply = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} Would you like me to arrange a callback so we can get this started for you?`;
       } 
-      // Check Services / What We Do
       else if (lower.includes('service') || lower.includes('offer') || lower.includes('what do you do') || lower.includes('specialty')) {
         const serviceTitles = activeServices.map(s => s.title).join(', ');
         botReply = `We specialize in: ${serviceTitles}. Would you like me to have our team contact you with more details?`;
       } 
-      // Check Operating Hours
       else if (lower.includes('hour') || lower.includes('open') || lower.includes('time') || lower.includes('day') || lower.includes('schedule')) {
         if (operatingHours.length > 0) {
           const schedule = operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ');
@@ -92,16 +90,13 @@ export default function MasterPremiumTemplate({
           botReply = `We operate Monday through Saturday with standard business hours. Feel free to reach out anytime!`;
         }
       } 
-      // Check Location / Address
       else if (lower.includes('location') || lower.includes('address') || lower.includes('where') || lower.includes('suburb')) {
         botReply = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
       } 
-      // Contact / Lead Capture Trigger
       else {
         botReply = `I'd love to make sure you get the exact answer to that! Let me have a team member contact you directly. What is your name and phone number?`;
       }
 
-      // Automatically capture lead if phone number or contact intent is expressed
       if (lower.includes('my name is') || lower.includes('call me') || /\d{8,}/.test(userText)) {
         await supabase.from('leads').insert([{
           owner_id: '00000000-0000-0000-0000-000000000000',
@@ -152,15 +147,14 @@ export default function MasterPremiumTemplate({
   };
   const c = themeColors[colorPalette] || themeColors.blue;
 
-  // Check if any "MORE" dropdown item is active
-  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq;
+  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq || activeSections.contact;
 
   return (
-    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
+    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative pb-20 md:pb-0`}>
       
       {/* FLOATING ACTION WIDGETS STACK */}
       {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
+        <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-2.5 items-end">
           
           {chatOpen && activeSections.showChatbotButton && (
             <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
@@ -256,7 +250,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STICKY HEADER WITH CAPITALIZED "MORE" DROPDOWN BESIDE CONTACT */}
+      {/* STICKY HEADER WITH CAPITALIZED "MORE" DROPDOWN */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -275,7 +269,6 @@ export default function MasterPremiumTemplate({
           {activeSections.services && <a href="#services" className={`hover:${c.text} transition`}>Services</a>}
           <a href="#contact" className={`hover:${c.text} transition`}>Contact</a>
 
-          {/* CAPITALIZED "MORE" DROPDOWN FOR TOGGLEABLE SECTIONS BESIDE CONTACT */}
           {hasMoreItems && (
             <div className="relative">
               <button 
@@ -321,6 +314,58 @@ export default function MasterPremiumTemplate({
           </a>
         </div>
       </header>
+
+      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Visible ONLY on mobile screens: md:hidden) */}
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-4 py-2.5 flex justify-around items-center shadow-2xl`}>
+        <a href="#" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+          <Home className="w-5 h-5" />
+          <span>Home</span>
+        </a>
+        <a href="#about" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+          <User className="w-5 h-5" />
+          <span>About</span>
+        </a>
+        {activeSections.services && (
+          <a href="#services" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+            <Briefcase className="w-5 h-5" />
+            <span>Services</span>
+          </a>
+        )}
+        <button 
+          onClick={() => setMobileMoreOpen(!mobileMoreOpen)} 
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition focus:outline-none`}
+        >
+          <Menu className="w-5 h-5" />
+          <span>More</span>
+        </button>
+
+        {/* MOBILE MORE POPUP MENU */}
+        {mobileMoreOpen && (
+          <div className={`absolute bottom-full left-0 right-0 mb-2 mx-4 ${bgCard} border ${borderMuted} rounded-2xl shadow-2xl py-3 px-2 flex flex-col gap-1 z-50 animate-in fade-in slide-in-from-bottom-2`}>
+            {activeSections.whyUs && (
+              <a href="#whyUs" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Why Us</a>
+            )}
+            {activeSections.projects && (
+              <a href="#projects" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Projects</a>
+            )}
+            {activeSections.reviews && (
+              <a href="#reviews" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Reviews</a>
+            )}
+            {showProducts && activeSections.products && (
+              <a href="#products" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Products</a>
+            )}
+            {activeSections.team && (
+              <a href="#team" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>Team</a>
+            )}
+            {activeSections.faq && (
+              <a href="#faq" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>FAQ</a>
+            )}
+            {activeSections.contact && (
+              <a href="#contact" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider ${c.text} bg-blue-500/10 rounded-xl transition`}>Contact</a>
+            )}
+          </div>
+        )}
+      </nav>
 
       {/* HERO SECTION */}
       {activeSections.hero && (
