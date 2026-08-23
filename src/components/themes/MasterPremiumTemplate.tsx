@@ -150,7 +150,7 @@ export default function MasterPremiumTemplate({
   const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq;
 
   return (
-    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative pb-20 md:pb-0`}>
+    <div id="hero" className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative pb-20 md:pb-0`}>
       
       {/* FLOATING ACTION WIDGETS STACK */}
       {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
@@ -252,7 +252,7 @@ export default function MasterPremiumTemplate({
 
       {/* STICKY HEADER */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
-        <a href="#" className="flex items-center gap-3 cursor-pointer group">
+        <a href="#hero" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
             <img src={logo} alt={businessName} style={{ height: `${logoSize}px` }} className="object-contain transition-all" />
           ) : (
@@ -264,7 +264,7 @@ export default function MasterPremiumTemplate({
         </a>
         
         <nav className={`hidden md:flex items-center gap-8 text-xs font-bold ${textMuted} uppercase tracking-wider relative`}>
-          <a href="#" className={`hover:${c.text} transition`}>Home</a>
+          <a href="#hero" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className={`hover:${c.text} transition`}>Home</a>
           <a href="#about" className={`hover:${c.text} transition`}>About</a>
           {activeSections.services && <a href="#services" className={`hover:${c.text} transition`}>Services</a>}
           <a href="#contact" className={`hover:${c.text} transition`}>Contact</a>
@@ -315,9 +315,13 @@ export default function MasterPremiumTemplate({
         </div>
       </header>
 
-      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Home, About, Services, Contact, and More) */}
+      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Home button jumps to top hero) */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-3 py-2 flex justify-around items-center shadow-2xl`}>
-        <a href="#" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+        <a 
+          href="#hero" 
+          onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+          className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}
+        >
           <Home className="w-4 h-4" />
           <span>Home</span>
         </a>
