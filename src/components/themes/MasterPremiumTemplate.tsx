@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown, Home, User, Briefcase, Menu } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown, Home, User, Briefcase, Mail as MailIcon, Menu } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -35,7 +35,7 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- INTELLIGENT RECEPTIONIST CHATBOT & MOBILE/DESKTOP DROPDOWN STATE ---
+  // --- INTELLIGENT RECEPTIONIST CHATBOT & DROPDOWN STATE ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
@@ -147,7 +147,7 @@ export default function MasterPremiumTemplate({
   };
   const c = themeColors[colorPalette] || themeColors.blue;
 
-  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq || activeSections.contact;
+  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq;
 
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative pb-20 md:pb-0`}>
@@ -250,7 +250,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STICKY HEADER WITH CAPITALIZED "MORE" DROPDOWN */}
+      {/* STICKY HEADER */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -315,29 +315,37 @@ export default function MasterPremiumTemplate({
         </div>
       </header>
 
-      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Visible ONLY on mobile screens: md:hidden) */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-4 py-2.5 flex justify-around items-center shadow-2xl`}>
-        <a href="#" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-          <Home className="w-5 h-5" />
+      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Home, About, Services, Contact, and More) */}
+      <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-3 py-2 flex justify-around items-center shadow-2xl`}>
+        <a href="#" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+          <Home className="w-4 h-4" />
           <span>Home</span>
         </a>
-        <a href="#about" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-          <User className="w-5 h-5" />
+        <a href="#about" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+          <User className="w-4 h-4" />
           <span>About</span>
         </a>
         {activeSections.services && (
-          <a href="#services" className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-            <Briefcase className="w-5 h-5" />
+          <a href="#services" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+            <Briefcase className="w-4 h-4" />
             <span>Services</span>
           </a>
         )}
-        <button 
-          onClick={() => setMobileMoreOpen(!mobileMoreOpen)} 
-          className={`flex flex-col items-center gap-1 text-[10px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition focus:outline-none`}
-        >
-          <Menu className="w-5 h-5" />
-          <span>More</span>
-        </button>
+        {activeSections.contact && (
+          <a href="#contact" className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
+            <MailIcon className="w-4 h-4" />
+            <span>Contact</span>
+          </a>
+        )}
+        {hasMoreItems && (
+          <button 
+            onClick={() => setMobileMoreOpen(!mobileMoreOpen)} 
+            className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition focus:outline-none`}
+          >
+            <Menu className="w-4 h-4" />
+            <span>More</span>
+          </button>
+        )}
 
         {/* MOBILE MORE POPUP MENU */}
         {mobileMoreOpen && (
@@ -359,9 +367,6 @@ export default function MasterPremiumTemplate({
             )}
             {activeSections.faq && (
               <a href="#faq" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 rounded-xl transition`}>FAQ</a>
-            )}
-            {activeSections.contact && (
-              <a href="#contact" onClick={() => setMobileMoreOpen(false)} className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider ${c.text} bg-blue-500/10 rounded-xl transition`}>Contact</a>
             )}
           </div>
         )}
