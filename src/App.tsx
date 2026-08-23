@@ -21,6 +21,8 @@ interface ProjectItem { id: string; subtitle: string; title: string; desc: strin
 interface ReviewItem { id: string; name: string; rating: number; text: string; image?: string; }
 interface TeamMemberItem { id: string; name: string; role: string; image?: string; }
 interface FaqItem { id: string; question: string; answer: string; }
+interface LocationItem { id: string; name: string; address: string; phone: string; email: string; }
+interface OperatingHourItem { id: string; days: string; hours: string; }
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -43,10 +45,19 @@ export default function App() {
   const [email, setEmail] = useState('contact@apex.com.au');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
 
+  // Additional Locations & Operating Hours State
+  const [locations, setLocations] = useState<LocationItem[]>([
+    { id: '1', name: 'Headquarters', address: '123 Trade Avenue, Melbourne VIC', phone: '+61 3 9111 2222', email: 'melbourne@apex.com.au' }
+  ]);
+  const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
+    { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
+    { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
+  ]);
+
   // Media & Logo Sizing Slider State
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
-  const [logoSize, setLogoSize] = useState<number>(40); // Default height in pixels
+  const [logoSize, setLogoSize] = useState<number>(40); 
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
@@ -59,6 +70,7 @@ export default function App() {
     projects: true,
     reviews: true,
     products: true,
+    team: true,
     faq: true,
     contact: true
   });
@@ -265,14 +277,14 @@ export default function App() {
                             <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Public Email</label>
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Email Address</label>
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="contact@business.com.au" />
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Location Data</h4>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">HQ Location Data</h4>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
                           <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
@@ -287,6 +299,44 @@ export default function App() {
                             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
                         </div>
+                      </div>
+
+                      {/* ADDITIONAL LOCATIONS MANAGER */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Additional Locations</h4>
+                          <button onClick={() => setLocations([...locations, { id: Date.now().toString(), name: 'Branch Office', address: '456 Commercial Rd', phone: '+61 3 0000 0000', email: 'branch@business.com.au' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                            + Add Location
+                          </button>
+                        </div>
+                        {locations.map((loc, index) => (
+                          <div key={loc.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
+                            <button onClick={() => setLocations(locations.filter(l => l.id !== loc.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                            <input type="text" value={loc.name} onChange={(e) => { const n = [...locations]; n[index].name = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Branch Name (e.g. Sydney Office)" />
+                            <input type="text" value={loc.address} onChange={(e) => { const n = [...locations]; n[index].address = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Street Address" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input type="text" value={loc.phone} onChange={(e) => { const n = [...locations]; n[index].phone = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Phone" />
+                              <input type="text" value={loc.email} onChange={(e) => { const n = [...locations]; n[index].email = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Email" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* HOURS OF OPERATION MANAGER */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Hours of Operation</h4>
+                          <button onClick={() => setOperatingHours([...operatingHours, { id: Date.now().toString(), days: 'Sunday', hours: 'Closed' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
+                            + Add Schedule
+                          </button>
+                        </div>
+                        {operatingHours.map((item, index) => (
+                          <div key={item.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex gap-2 items-center relative">
+                            <input type="text" value={item.days} onChange={(e) => { const n = [...operatingHours]; n[index].days = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-medium" placeholder="Days (e.g. Mon - Fri)" />
+                            <input type="text" value={item.hours} onChange={(e) => { const n = [...operatingHours]; n[index].hours = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Hours (e.g. 9am - 5pm)" />
+                            <button onClick={() => setOperatingHours(operatingHours.filter(h => h.id !== item.id))} className="text-slate-500 hover:text-red-400 text-xs">✕</button>
+                          </div>
+                        ))}
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
@@ -483,10 +533,20 @@ export default function App() {
                         </button>
                       </div>
 
-                      {['hero', 'services', 'whyUs', 'projects', 'reviews', 'products', 'faq'].map((key) => (
+                      {Object.entries({
+                        hero: 'Hero Section',
+                        services: 'Services (What We Do)',
+                        whyUs: 'Why Choose Us',
+                        projects: 'Recent Projects',
+                        reviews: 'Client Reviews',
+                        products: 'Online Store / Products',
+                        team: 'Our Executive Team',
+                        faq: 'FAQ Section',
+                        contact: 'Contact Footer'
+                      }).map(([key, label]) => (
                         <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                          <span className="text-sm font-medium text-white capitalize">{key.replace(/([A-Z])/g, ' $1')} Section</span>
-                          <button onClick={() => setActiveSections({ ...activeSections, [key as keyof typeof activeSections]: !activeSections[key as keyof typeof activeSections] })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections[key as keyof typeof activeSections] ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                          <span className="text-sm font-medium text-white">{label}</span>
+                          <button onClick={() => setActiveSections({ ...activeSections, [key]: !activeSections[key as keyof typeof activeSections] })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections[key as keyof typeof activeSections] ? 'bg-blue-500' : 'bg-slate-700'}`}>
                             <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections[key as keyof typeof activeSections] ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                         </div>
@@ -575,7 +635,7 @@ export default function App() {
                   &larr; Exit Fullscreen Preview
                 </button>
                 <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white shadow-2xl px-4 py-3 rounded-full font-black text-sm hover:bg-slate-800 transition">
-                  {themeMode === 'light' ? '🌙 Test Dark' : '☀️ Test Light'}
+                  {themeMode === 'light' ? '🌙 Test Dark' : '☀️ Light Mode'}
                 </button>
               </div>
             )}
@@ -596,14 +656,15 @@ export default function App() {
                 )}
 
                 <div className="relative">
-                  {/* MASTER ENGINE ROUTER WITH LOGO SIZE */}
+                  {/* MASTER ENGINE ROUTER WITH LOCATIONS & HOURS */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
                       logo: siteLogo, logoSize, heroImage, heroOpacity, 
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
-                      products, activeSections, themeMode, teamList, faqList
+                      products, activeSections, themeMode, teamList, faqList,
+                      locations, operatingHours
                     };
 
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
