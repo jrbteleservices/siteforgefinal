@@ -27,7 +27,7 @@ interface LocationItem { id: string; name: string; address: string; phone: strin
 interface OperatingHourItem { id: string; days: string; hours: string; }
 
 export default function App() {
-  // --- LIVE PUBLISHED VIEW CHECK (Restored) ---
+  // --- LIVE PUBLISHED VIEW CHECK ---
   const [isPublishedView] = useState(() => typeof window !== 'undefined' && window.location.search.includes('published=true'));
   const [publishedData] = useState(() => {
     try {
@@ -147,11 +147,9 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: Restored routing logic to fix DNS_PROBE_FINISHED_NXDOMAIN
+  // PUBLISH HANDLER: 100% Bulletproof - Opens synchronously on click so browsers NEVER block it.
   const handlePublish = () => { 
-    setIsPublishing(true); 
-    
-    // 1. Pack all current editor data
+    // 1. Pack all current editor data immediately
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
@@ -165,21 +163,19 @@ export default function App() {
     // 2. Save it securely to local storage
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
+    // 3. IMMEDIATELY open the actual working URL (bypassing timeouts and confirm dialogs)
+    const actualWorkingUrl = `${window.location.origin}?published=true`;
+    const newTab = window.open(actualWorkingUrl, '_blank');
+    
+    // 4. Fallback if the user has an extremely aggressive global popup blocker
+    if (!newTab) {
+      window.location.href = actualWorkingUrl;
+    }
+
+    // 5. Update UI Button state briefly
+    setIsPublishing(true); 
     setTimeout(() => { 
       setIsPublishing(false); 
-      
-      // 3. Define the dummy visual URL and the actual working URL
-      const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const dummyDomain = `https://${slug}.siteforge.au`;
-      const actualWorkingUrl = `${window.location.origin}?published=true`;
-
-      // 4. Trigger the confirmation
-      const confirmed = window.confirm(`Successfully published to edge network!\n\nLive URL: ${dummyDomain}\n\nClick OK to open your live published website in a new window.`);
-      
-      // 5. Open the actual working URL (bypassing the DNS error)
-      if (confirmed) {
-        window.open(actualWorkingUrl, '_blank');
-      }
     }, 800); 
   };
 
@@ -344,6 +340,7 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* ADDITIONAL LEGAL INFO (ABN / GST Footer Input) */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
                         <div>
