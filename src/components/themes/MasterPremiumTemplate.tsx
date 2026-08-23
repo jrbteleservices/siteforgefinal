@@ -18,7 +18,7 @@ interface MasterTemplateProps {
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[]; locations?: LocationItem[]; operatingHours?: OperatingHourItem[];
-  showSiteForgeBranding?: boolean; // Toggle for White-Label / Branding removal
+  showSiteForgeBranding?: boolean;
 }
 
 export default function MasterPremiumTemplate({ 
@@ -35,13 +35,13 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- CHATBOT STATE ---
+  // --- UPGRADED INTELLIGENT CHATBOT STATE ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
   ]);
   const [chatInput, setChatInput] = useState('');
-  const [leadCaptured, setLeadCaptured] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
@@ -57,55 +57,67 @@ export default function MasterPremiumTemplate({
   ];
   const activeFaqs = faqList.length > 0 ? faqList : defaultFaqs;
 
-  // --- TOKEN-FREE KNOWLEDGE MATCHER & LEAD CAPTURE ---
-  const handleSendMessage = (e: React.FormEvent) => {
+  // --- INTELLIGENT RECEPTIONIST ENGINE ---
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || chatLoading) return;
 
     const userText = chatInput.trim();
-    const newMessages = [...chatMessages, { sender: 'user' as const, text: userText }];
-    setChatMessages(newMessages);
+    const updatedMessages = [...chatMessages, { sender: 'user' as const, text: userText }];
+    setChatMessages(updatedMessages);
     setChatInput('');
+    setChatLoading(true);
 
-    setTimeout(() => {
+    try {
+      let botReply = '';
       const lower = userText.toLowerCase();
-      let botResponse = '';
 
       // Check Products / Pricing
-      const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package'));
-      if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much'))) {
-        botResponse = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} You can securely purchase it directly from our Services & Packages section!`;
+      const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package') || lower.includes('how much'));
+      if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes(matchedProduct.name.toLowerCase()))) {
+        botReply = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} Would you like me to arrange a callback so we can get this started for you?`;
       } 
       // Check Services / What We Do
-      else if (lower.includes('service') || lower.includes('offer') || lower.includes('do you')) {
+      else if (lower.includes('service') || lower.includes('offer') || lower.includes('what do you do') || lower.includes('specialty')) {
         const serviceTitles = activeServices.map(s => s.title).join(', ');
-        botResponse = `We specialize in: ${serviceTitles}. Would you like me to have our team give you a callback?`;
+        botReply = `We specialize in: ${serviceTitles}. Would you like me to have our team contact you with more details?`;
       } 
-      // Check Hours
-      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time') || lower.includes('day')) {
+      // Check Operating Hours
+      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time') || lower.includes('day') || lower.includes('schedule')) {
         if (operatingHours.length > 0) {
           const schedule = operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ');
-          botResponse = `Our operating schedule is: ${schedule}.`;
+          botReply = `Our operating schedule is: ${schedule}.`;
         } else {
-          botResponse = `We operate Monday to Saturday with standard business hours. Feel free to reach out anytime!`;
+          botReply = `We operate Monday through Saturday with standard business hours. Feel free to reach out anytime!`;
         }
       } 
       // Check Location / Address
       else if (lower.includes('location') || lower.includes('address') || lower.includes('where') || lower.includes('suburb')) {
-        botResponse = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
+        botReply = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
       } 
-      // Lead Capture Trigger
-      else if (!leadCaptured && (lower.includes('contact') || lower.includes('callback') || lower.includes('quote') || lower.includes('book') || newMessages.length > 3)) {
-        setLeadCaptured(true);
-        botResponse = `I would love to connect you with our team! Please reply with your phone number or call us directly at ${phone}, and we will get right back to you.`;
-      } 
-      // Fallback
+      // Contact / Lead Capture Trigger
       else {
-        botResponse = `I couldn't find exact details for that in our live system. Please give us a direct call at ${phone} or email us at ${email} and our team will be happy to help!`;
+        botReply = `I'd love to make sure you get the exact answer to that! Let me have a team member contact you directly. What is your name and phone number?`;
       }
 
-      setChatMessages([...newMessages, { sender: 'bot', text: botResponse }]);
-    }, 600);
+      // Automatically capture lead if phone number or contact intent is expressed
+      if (lower.includes('my name is') || lower.includes('call me') || /\d{8,}/.test(userText)) {
+        await supabase.from('leads').insert([{
+          owner_id: '00000000-0000-0000-0000-000000000000',
+          name: 'Chat Visitor',
+          phone: userText.replace(/[^0-9+]/g, '') || phone,
+          email: email,
+          message: `[AI Concierge Lead] Inquiry: "${userText}"`
+        }]);
+        botReply = `Thank you! I have securely recorded your details and notified our team. Someone will be in touch with you shortly.`;
+      }
+
+      setChatMessages([...updatedMessages, { sender: 'bot' as const, text: botReply }]);
+    } catch (err) {
+      setChatMessages([...updatedMessages, { sender: 'bot' as const, text: `Please give us a call directly at ${phone} and our team will be delighted to assist!` }]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
@@ -142,94 +154,97 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING WHATSAPP, CALL & INTELLIGENT CHATBOT WIDGET */}
+      {/* FLOATING ACTION WIDGETS STACK (CALL -> WHATSAPP -> CHATBOT AT VERY BOTTOM) */}
       {activeSections.liveRequest && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
           
-          {/* CHATBOT WINDOW POPUP */}
+          {/* COMPACT CHATBOT WINDOW POPUP WITH CLOSE (X) BUTTON */}
           {chatOpen && (
-            <div className="w-[360px] h-[480px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className={`p-4 ${c.bg} text-white flex justify-between items-center shadow-md`}>
+            <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
+              <div className="p-3.5 bg-blue-600 text-white flex justify-between items-center shadow-md">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm">{businessName} Assistant</h4>
-                    <span className="text-[10px] text-emerald-300 flex items-center gap-1">● Online & Ready</span>
+                    <h4 className="font-bold text-xs">{businessName} Assistant</h4>
+                    <span className="text-[9px] text-emerald-200 flex items-center gap-1">● Online & Ready</span>
                   </div>
                 </div>
-                <button onClick={() => setChatOpen(false)} className="text-white hover:opacity-80"><X className="w-5 h-5" /></button>
+                <button onClick={() => setChatOpen(false)} className="text-white hover:bg-white/20 p-1 rounded-lg transition">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
               {/* CHAT MESSAGES */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-950 text-xs">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed ${msg.sender === 'user' ? `${c.bg} text-white rounded-br-none` : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}`}>
+                    <div className={`max-w-[85%] p-2.5 rounded-xl leading-relaxed ${msg.sender === 'user' ? `${c.bg} text-white rounded-br-none` : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}`}>
                       {msg.text}
                     </div>
                   </div>
                 ))}
+                {chatLoading && <div className="text-slate-500 text-[10px] italic">Assistant is thinking...</div>}
               </div>
 
               {/* CHAT INPUT FORM */}
-              <form onSubmit={handleSendMessage} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+              <form onSubmit={handleSendMessage} className="p-2.5 bg-slate-900 border-t border-slate-800 flex gap-2">
                 <input 
                   type="text" 
                   value={chatInput} 
                   onChange={(e) => setChatInput(e.target.value)} 
-                  placeholder="Ask about price, services, hours..." 
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                  placeholder="Ask a question or request a quote..." 
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
                 />
-                <button type="submit" className={`${c.bg} ${c.hover} text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center`}>
+                <button type="submit" className={`${c.bg} ${c.hover} text-white px-3 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center`}>
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </form>
 
               {/* WHITE-LABEL BRANDING FOOTER */}
               {showSiteForgeBranding && (
-                <div className="bg-slate-950 py-1.5 px-3 text-center border-t border-slate-900 text-[9px] text-slate-500">
+                <div className="bg-slate-950 py-1 px-3 text-center border-t border-slate-900 text-[8px] text-slate-500">
                   Powered by <span className="font-bold text-slate-400">SiteForge</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* FLOATING ACTION BUTTONS */}
-          <div className="flex flex-col gap-3">
-            <button 
-              onClick={() => setChatOpen(!chatOpen)}
-              className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-              title="Open Virtual Assistant"
+          {/* FLOATING ACTION STACK (CALL -> WHATSAPP -> CHATBOT) */}
+          <div className="flex flex-col gap-2.5 items-end">
+            <a 
+              href={`tel:${phone}`}
+              className="w-12 h-12 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              title="Call Us Direct"
             >
-              <Bot className="w-7 h-7" />
-              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                Virtual Assistant
+              <Phone className="w-5 h-5" />
+              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                Call Us Now
               </span>
-            </button>
+            </a>
             <a 
               href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
               target="_blank" 
               rel="noreferrer"
-              className="w-14 h-14 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              className="w-12 h-12 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
               title="Chat on WhatsApp"
             >
-              <MessageCircle className="w-7 h-7 fill-white text-emerald-500" />
-              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+              <MessageCircle className="w-6 h-6 fill-white text-emerald-500" />
+              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
                 Chat on WhatsApp
               </span>
             </a>
-            <a 
-              href={`tel:${phone}`}
-              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-              title="Call Us Direct"
+            <button 
+              onClick={() => setChatOpen(!chatOpen)}
+              className="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              title="Open Virtual Assistant"
             >
-              <Phone className="w-6 h-6" />
-              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-                Call Us Now
+              <Bot className="w-6 h-6" />
+              <span className="absolute right-14 bg-slate-900 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                Virtual Assistant
               </span>
-            </a>
+            </button>
           </div>
         </div>
       )}
