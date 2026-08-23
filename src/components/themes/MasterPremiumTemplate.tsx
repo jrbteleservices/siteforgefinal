@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -35,13 +35,14 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- INTELLIGENT RECEPTIONIST CHATBOT STATE ---
+  // --- INTELLIGENT RECEPTIONIST CHATBOT & DROPDOWN STATE ---
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
@@ -151,14 +152,16 @@ export default function MasterPremiumTemplate({
   };
   const c = themeColors[colorPalette] || themeColors.blue;
 
+  // Check if any "More" dropdown item is active
+  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq;
+
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING ACTION WIDGETS STACK (INDIVIDUALLY CONTROLLED) */}
+      {/* FLOATING ACTION WIDGETS STACK */}
       {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 items-end">
           
-          {/* COMPACT CHATBOT WINDOW POPUP */}
           {chatOpen && activeSections.showChatbotButton && (
             <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
               <div className="p-3.5 bg-blue-600 text-white flex justify-between items-center shadow-md">
@@ -176,7 +179,6 @@ export default function MasterPremiumTemplate({
                 </button>
               </div>
 
-              {/* CHAT MESSAGES */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-950 text-xs">
                 {chatMessages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -188,7 +190,6 @@ export default function MasterPremiumTemplate({
                 {chatLoading && <div className="text-slate-500 text-[10px] italic">Assistant is thinking...</div>}
               </div>
 
-              {/* CHAT INPUT FORM */}
               <form onSubmit={handleSendMessage} className="p-2.5 bg-slate-900 border-t border-slate-800 flex gap-2">
                 <input 
                   type="text" 
@@ -202,7 +203,6 @@ export default function MasterPremiumTemplate({
                 </button>
               </form>
 
-              {/* WHITE-LABEL BRANDING FOOTER */}
               {showSiteForgeBranding && (
                 <div className="bg-slate-950 py-1 px-3 text-center border-t border-slate-900 text-[8px] text-slate-500">
                   Powered by <span className="font-bold text-slate-400">SiteForge</span>
@@ -211,7 +211,6 @@ export default function MasterPremiumTemplate({
             </div>
           )}
 
-          {/* FLOATING ACTION STACK */}
           <div className="flex flex-col gap-2.5 items-end">
             {activeSections.showCallButton && (
               <a 
@@ -257,7 +256,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STRICTLY STICKY HEADER (Pins company name, navigation, phone, & consultation button at the top during scroll) */}
+      {/* STICKY HEADER WITH HOME, ABOUT, SERVICES, CONTACT & DYNAMIC "MORE" DROPDOWN */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -270,10 +269,47 @@ export default function MasterPremiumTemplate({
           <span className={`font-black text-xl tracking-tight ${textMain} group-hover:opacity-80 transition`}>{businessName}</span>
         </a>
         
-        <nav className={`hidden md:flex items-center gap-8 text-xs font-bold ${textMuted} uppercase tracking-wider`}>
+        <nav className={`hidden md:flex items-center gap-8 text-xs font-bold ${textMuted} uppercase tracking-wider relative`}>
           <a href="#" className={`hover:${c.text} transition`}>Home</a>
           <a href="#about" className={`hover:${c.text} transition`}>About</a>
           {activeSections.services && <a href="#services" className={`hover:${c.text} transition`}>Services</a>}
+          
+          {/* MORE DROPDOWN FOR TOGGLEABLE SECTIONS */}
+          {hasMoreItems && (
+            <div className="relative">
+              <button 
+                onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                className={`flex items-center gap-1 hover:${c.text} transition focus:outline-none`}
+              >
+                <span>More</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {moreDropdownOpen && (
+                <div className={`absolute top-full mt-2 w-48 ${bgCard} border ${borderMuted} rounded-xl shadow-2xl py-2 flex flex-col z-50 animate-in fade-in slide-in-from-top-2`}>
+                  {activeSections.whyUs && (
+                    <a href="#whyUs" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Why Us</a>
+                  )}
+                  {activeSections.projects && (
+                    <a href="#projects" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Projects</a>
+                  )}
+                  {activeSections.reviews && (
+                    <a href="#reviews" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Reviews</a>
+                  )}
+                  {showProducts && activeSections.products && (
+                    <a href="#products" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Products</a>
+                  )}
+                  {activeSections.team && (
+                    <a href="#team" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Team</a>
+                  )}
+                  {activeSections.faq && (
+                    <a href="#faq" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>FAQ</a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <a href="#contact" className={`hover:${c.text} transition`}>Contact</a>
         </nav>
 
@@ -510,7 +546,7 @@ export default function MasterPremiumTemplate({
 
       {/* FAQ SECTION */}
       {activeSections.faq && (
-        <section className={`py-24 px-8 max-w-4xl mx-auto border-t ${borderMuted}`}>
+        <section id="faq" className={`py-24 px-8 max-w-4xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center mb-16">
             <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>QUESTIONS</h2>
             <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Frequently Asked Questions</h3>
