@@ -60,12 +60,15 @@ export default function App() {
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
-  // NEW: Dynamic Hero and About Text Overrides
+  // NEW: Dynamic Hero and About Text Overrides (Including Buttons)
   const [heroTagline, setHeroTagline] = useState('');
   const [heroHeadline, setHeroHeadline] = useState('');
   const [heroSubheadline, setHeroSubheadline] = useState('');
+  const [heroButtonText, setHeroButtonText] = useState('Engage Our Team');
+  
   const [aboutTitle, setAboutTitle] = useState('');
   const [aboutBody, setAboutBody] = useState('');
+  const [aboutButtonText, setAboutButtonText] = useState('Get In Touch');
 
   // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>([]);
@@ -158,7 +161,8 @@ export default function App() {
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
-      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody, // NEW PROPS ADDED HERE
+      heroTagline, heroHeadline, heroSubheadline, heroButtonText, 
+      aboutTitle, aboutBody, aboutButtonText,
       headers, servicesList, projectsList, reviewsList,
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
@@ -185,7 +189,8 @@ export default function App() {
     const dataToRender = publishedData ? publishedData.templateProps : {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
-      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody,
+      heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+      aboutTitle, aboutBody, aboutButtonText,
       headers, servicesList, projectsList, reviewsList,
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
@@ -444,6 +449,7 @@ export default function App() {
                         <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline (e.g. THE FUTURE OF WEB PRESENCE)" />
                         <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline (e.g. Lightning-Fast Websites...)" />
                         <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline content..." />
+                        <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Engage Our Team)" />
                       </div>
 
                       {/* ABOUT US EDITS */}
@@ -451,6 +457,7 @@ export default function App() {
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">About Us Section</h3></div>
                         <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Us Title" />
                         <textarea value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={4} placeholder="About Us description body..." />
+                        <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Get In Touch)" />
                       </div>
 
                       <div className="space-y-4 pt-4 border-t border-slate-800">
@@ -778,7 +785,8 @@ export default function App() {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
                       logo: siteLogo, logoSize, heroImage, heroOpacity, 
-                      heroTagline, heroHeadline, heroSubheadline, aboutTitle, aboutBody,
+                      heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+                      aboutTitle, aboutBody, aboutButtonText,
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList,
