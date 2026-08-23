@@ -1,11 +1,11 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Globe, Share2, Star, Video, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Globe, Share2, Star, Video, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Edit3, Trash2, Plus, MoveUp, MoveDown, Eye } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
-interface ReviewItem { id: string; name: string; rating: number; text: string; }
+interface ReviewItem { id: string; name: string; rating: number; text: string; image?: string; }
 interface FaqItem { id: string; question: string; answer: string; }
 
 interface MasterTemplateProps {
@@ -16,12 +16,15 @@ interface MasterTemplateProps {
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[];
+  isEditorActive?: boolean; // When true, shows live Elementor-style edit badges & controls
+  onUpdateContent?: (section: string, data: any) => void;
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
-  showProducts, products, activeSections, themeMode, teamList = [], faqList = []
+  showProducts, products, activeSections, themeMode, teamList = [], faqList = [],
+  isEditorActive = false
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -31,7 +34,9 @@ export default function MasterPremiumTemplate({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Preloaded industry default hero image if no custom upload exists
+  // Active modal or selected element for inline editor
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
 
@@ -78,9 +83,37 @@ export default function MasterPremiumTemplate({
   const c = themeColors[colorPalette] || themeColors.blue;
 
   return (
-    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300`}>
+    <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* HEADER */}
+      {/* FLOATING WHATSAPP + CALL BUTTONS (MOBILE & DESKTOP) */}
+      {activeSections.liveRequest && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          <a 
+            href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
+            target="_blank" 
+            rel="noreferrer"
+            className="w-14 h-14 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+            title="Chat on WhatsApp"
+          >
+            <MessageCircle className="w-7 h-7 fill-white text-emerald-500" />
+            <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+              Chat on WhatsApp
+            </span>
+          </a>
+          <a 
+            href={`tel:${phone}`}
+            className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+            title="Call Us Direct"
+          >
+            <Phone className="w-6 h-6" />
+            <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+              Call Us Now
+            </span>
+          </a>
+        </div>
+      )}
+
+      {/* HEADER / NAVIGATION */}
       <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -137,31 +170,11 @@ export default function MasterPremiumTemplate({
                 </a>
               </div>
             </div>
-
-            {activeSections.liveRequest && (
-              <div className="relative z-10 hidden lg:block">
-                <div className={`absolute -inset-1 ${c.bg} rounded-3xl blur-xl opacity-20 animate-pulse`}></div>
-                <div className="relative bg-slate-900/95 backdrop-blur-md border border-slate-700 p-8 rounded-3xl flex flex-col gap-6 shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <span className="font-bold text-sm text-white">Priority Client Request</span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="bg-slate-950 p-5 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                      Connect instantly with our managing partners for priority service and quoting in <span className="text-white font-bold">{suburb}</span>.
-                    </div>
-                  </div>
-                  <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 py-4 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
-                    <MessageCircle className="w-4 h-4" /> Start WhatsApp Chat
-                  </a>
-                </div>
-              </div>
-            )}
           </div>
         </section>
       )}
 
-      {/* SERVICES SECTION */}
+      {/* SERVICES / WHAT WE DO SECTION */}
       {activeSections.services && (
         <section id="services" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -216,7 +229,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PROJECTS SECTION */}
+      {/* PROJECTS / PORTFOLIO SECTION */}
       {activeSections.projects && (
         <section id="projects" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -266,12 +279,12 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PRODUCTS / FIXED-PRICE PACKAGES WITH IMAGE UPLOADS & CHECKOUT URL */}
+      {/* PRODUCTS & COMMERCE STORE SECTION */}
       {showProducts && activeSections.products && activeProducts.length > 0 && (
         <section id="products" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>FIXED RATE SERVICES</h2>
-            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Service Packages & Checkout</h3>
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>FIXED RATE SERVICES & GOODS</h2>
+            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Online Store & Packages</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {activeProducts.map((prod) => (
@@ -281,7 +294,7 @@ export default function MasterPremiumTemplate({
                     <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   </div>
                 ) : (
-                  <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold`}>Package Image</div>
+                  <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold`}>Product Image</div>
                 )}
                 <div className="p-8 flex flex-col justify-between flex-1 gap-6">
                   <div>
@@ -304,7 +317,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* TEAM SECTION */}
+      {/* EXECUTIVE TEAM SECTION */}
       <section id="team" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>LEADERSHIP</h2>
