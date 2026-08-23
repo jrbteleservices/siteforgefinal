@@ -30,8 +30,8 @@ export default function App() {
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // --- NAVIGATION STATE ---
-  const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('dashboard');
+  // --- NAVIGATION STATE (Defaults directly to builder so it opens instantly) ---
+  const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('builder');
   const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
   
   // --- BUILDER TABS ---
@@ -136,19 +136,26 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: Opens the live website immediately in a new tab on click to bypass popup blockers
+  // PUBLISH HANDLER: Fixed to perfectly bypass browser popup blockers
   const handlePublish = () => { 
-    const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const liveUrl = `https://${slug}.siteforge.au`;
-    
-    // Open immediately upon user click
-    window.open(liveUrl, '_blank');
-
     setIsPublishing(true); 
+    
+    // Using a 100ms timeout (under Chrome's 1000ms limit) ensures the browser 
+    // recognizes this as a direct user click, preventing the popup blocker.
     setTimeout(() => { 
       setIsPublishing(false); 
-      alert(`Successfully published to edge network!\n\nLive URL: ${liveUrl}`);
-    }, 1200); 
+      const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const liveUrl = `https://${slug}.siteforge.au`;
+      const confirmed = window.confirm(`Successfully published to edge network!\n\nLive URL: ${liveUrl}\n\nClick OK to open your live published website in a new window.`);
+      
+      if (confirmed) {
+        const newTab = window.open(liveUrl, '_blank');
+        // Fallback if the user has an extremely strict global popup blocker active
+        if (!newTab) {
+          window.location.href = liveUrl;
+        }
+      }
+    }, 100); 
   };
 
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
