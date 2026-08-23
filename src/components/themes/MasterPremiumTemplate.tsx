@@ -112,9 +112,9 @@ export default function MasterPremiumTemplate({
         botReply = `Thank you! I have securely recorded your details and notified our team. Someone will be in touch with you shortly.`;
       }
 
-      setChatMessages([...updatedMessages, { sender: 'bot' as const, text: botReply }]);
+      setChatMessages([...updatedMessages, { sender: 'bot', text: botReply }]);
     } catch (err) {
-      setChatMessages([...updatedMessages, { sender: 'bot' as const, text: `Please give us a call directly at ${phone} and our team will be delighted to assist!` }]);
+      setChatMessages([...updatedMessages, { sender: 'bot', text: `Please give us a call directly at ${phone} and our team will be delighted to assist!` }]);
     } finally {
       setChatLoading(false);
     }
@@ -138,7 +138,7 @@ export default function MasterPremiumTemplate({
   const textMuted = isDark ? 'text-slate-400' : 'text-slate-600';
   const bgCard = isDark ? 'bg-slate-900' : 'bg-white';
   const borderMuted = isDark ? 'border-slate-800' : 'border-slate-200';
-  const bgHeader = isDark ? 'bg-slate-950/90' : 'bg-white/90';
+  const bgHeader = isDark ? 'bg-slate-950/95' : 'bg-white/95';
   const inputBg = isDark ? 'bg-slate-900' : 'bg-white';
 
   const themeColors: Record<string, any> = {
@@ -257,8 +257,8 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STICKY HEADER (Sticks throughout website while scrolling) */}
-      <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
+      {/* STRICTLY STICKY HEADER (Pins company name, navigation, phone, & consultation button at the top during scroll) */}
+      <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
             <img src={logo} alt={businessName} style={{ height: `${logoSize}px` }} className="object-contain transition-all" />
