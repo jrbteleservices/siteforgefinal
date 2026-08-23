@@ -1,12 +1,14 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
 interface ReviewItem { id: string; name: string; rating: number; text: string; image?: string; }
 interface FaqItem { id: string; question: string; answer: string; }
+interface LocationItem { id: string; name: string; address: string; phone: string; email: string; }
+interface OperatingHourItem { id: string; days: string; hours: string; }
 
 interface MasterTemplateProps {
   config: IndustryConfig;
@@ -15,13 +17,13 @@ interface MasterTemplateProps {
   colorPalette: string; logo?: string | null; logoSize?: number; heroImage?: string | null; heroOpacity: number;
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
-  teamList?: TeamMemberItem[]; faqList?: FaqItem[];
+  teamList?: TeamMemberItem[]; faqList?: FaqItem[]; locations?: LocationItem[]; operatingHours?: OperatingHourItem[];
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, logoSize = 40, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
-  showProducts, products, activeSections, themeMode, teamList = [], faqList = []
+  showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = []
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -126,7 +128,7 @@ export default function MasterPremiumTemplate({
           {activeSections.projects && <a href="#projects" className={`hover:${c.text} transition`}>Portfolio</a>}
           {activeSections.reviews && <a href="#reviews" className={`hover:${c.text} transition`}>Testimonials</a>}
           {showProducts && activeSections.products && <a href="#products" className={`hover:${c.text} transition`}>Services & Packages</a>}
-          <a href="#team" className={`hover:${c.text} transition`}>Our Team</a>
+          {activeSections.team && <a href="#team" className={`hover:${c.text} transition`}>Our Team</a>}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -312,28 +314,30 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* EXECUTIVE TEAM SECTION */}
-      <section id="team" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>LEADERSHIP</h2>
-          <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Our Executive Team</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {activeTeam.map((member) => (
-            <div key={member.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col`}>
-              {member.image ? (
-                <div className="h-72 w-full"><img src={member.image} alt={member.name} className="w-full h-full object-cover" /></div>
-              ) : (
-                <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted}`}>No Photo</div>
-              )}
-              <div className="p-6 text-center">
-                <h4 className={`text-xl font-bold ${textMain}`}>{member.name}</h4>
-                <p className={`${c.text} text-xs font-bold uppercase tracking-wider mt-1`}>{member.role}</p>
+      {/* EXECUTIVE TEAM SECTION (CONDITIONALLY RENDERED BASED ON activeSections.team) */}
+      {activeSections.team && (
+        <section id="team" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>LEADERSHIP</h2>
+            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Our Executive Team</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {activeTeam.map((member) => (
+              <div key={member.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col`}>
+                {member.image ? (
+                  <div className="h-72 w-full"><img src={member.image} alt={member.name} className="w-full h-full object-cover" /></div>
+                ) : (
+                  <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted}`}>No Photo</div>
+                )}
+                <div className="p-6 text-center">
+                  <h4 className={`text-xl font-bold ${textMain}`}>{member.name}</h4>
+                  <p className={`${c.text} text-xs font-bold uppercase tracking-wider mt-1`}>{member.role}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FAQ SECTION */}
       {activeSections.faq && (
@@ -353,7 +357,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* FOOTER & AUTHENTIC BRAND SOCIAL SVG ICONS PLACED UNDER STREET ADDRESS */}
+      {/* FOOTER & LOCATIONS / HOURS */}
       {activeSections.contact && (
         <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
           <div className="flex flex-col gap-6">
@@ -376,9 +380,33 @@ export default function MasterPremiumTemplate({
                 <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
                 <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
               </div>
+
+              {/* RENDER ADDITIONAL LOCATIONS */}
+              {locations.map((loc) => (
+                <div key={loc.id} className="flex items-center gap-4 border-t border-slate-800 pt-4">
+                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
+                  <div>
+                    <div className="font-bold text-white">{loc.name}</div>
+                    <div className={textMuted}>{loc.address} ({loc.phone})</div>
+                  </div>
+                </div>
+              ))}
+
+              {/* RENDER OPERATING HOURS */}
+              {operatingHours.length > 0 && (
+                <div className="flex items-start gap-4 border-t border-slate-800 pt-4">
+                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Clock className="w-5 h-5" /></div>
+                  <div className="space-y-1">
+                    <div className="font-bold text-white uppercase tracking-wider text-xs">Hours of Operation</div>
+                    {operatingHours.map((oh) => (
+                      <div key={oh.id} className="text-xs flex gap-2"><span className="font-semibold">{oh.days}:</span> <span className={textMuted}>{oh.hours}</span></div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* AUTHENTIC BRANDED SOCIAL SVG ICONS (INSTAGRAM, TIKTOK, FACEBOOK) */}
+            {/* BRANDED SOCIAL ICONS */}
             <div className="flex items-center gap-3 pt-2">
               {socials.instagram && (
                 <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
