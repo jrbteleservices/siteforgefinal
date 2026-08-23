@@ -27,7 +27,7 @@ interface LocationItem { id: string; name: string; address: string; phone: strin
 interface OperatingHourItem { id: string; days: string; hours: string; }
 
 export default function App() {
-  // --- LIVE PUBLISHED VIEW CHECK ---
+  // --- LIVE PUBLISHED VIEW CHECK (Restored) ---
   const [isPublishedView] = useState(() => typeof window !== 'undefined' && window.location.search.includes('published=true'));
   const [publishedData] = useState(() => {
     try {
@@ -51,7 +51,7 @@ export default function App() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // Core Business Info & Additional Legal Info (ABN / GST Footer Field)
+  // Core Business Info & Additional Legal Info
   const [colorPalette, setColorPalette] = useState('blue');
   const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
   const [city, setCity] = useState('Melbourne');
@@ -147,7 +147,7 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: Saves data locally and redirects to the working actual URL to avoid DNS errors.
+  // PUBLISH HANDLER: Restored routing logic to fix DNS_PROBE_FINISHED_NXDOMAIN
   const handlePublish = () => { 
     setIsPublishing(true); 
     
@@ -188,7 +188,7 @@ export default function App() {
   if (isPublishedView && publishedData) {
     const currentConfig = AUSTRALIAN_THEMES[publishedData.selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
     return (
-      <div className="w-full min-h-screen bg-slate-50">
+      <div className="w-full min-h-screen overflow-y-auto bg-slate-50">
         <MasterPremiumTemplate config={currentConfig} {...publishedData.templateProps} />
       </div>
     );
@@ -344,7 +344,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* ADDITIONAL LEGAL INFO (ABN / GST Footer Input) */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
                         <div>
