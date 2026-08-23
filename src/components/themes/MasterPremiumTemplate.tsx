@@ -15,6 +15,11 @@ interface MasterTemplateProps {
   businessName: string; phone: string; suburb: string; city: string; streetAddress: string; email: string;
   socials: { facebook: string; instagram: string; tiktok: string; };
   colorPalette: string; logo?: string | null; logoSize?: number; heroImage?: string | null; heroOpacity: number;
+  
+  // Custom Overrides
+  heroTagline?: string; heroHeadline?: string; heroSubheadline?: string; heroButtonText?: string;
+  aboutTitle?: string; aboutBody?: string; aboutButtonText?: string;
+
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[]; locations?: LocationItem[]; operatingHours?: OperatingHourItem[];
@@ -24,7 +29,10 @@ interface MasterTemplateProps {
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-  logo, logoSize = 40, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
+  logo, logoSize = 40, heroImage, heroOpacity, 
+  heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+  aboutTitle, aboutBody, aboutButtonText,
+  headers, servicesList, projectsList, reviewsList,
   showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = [],
   showSiteForgeBranding = true, additionalLegalInfo = ''
 }: MasterTemplateProps) {
@@ -299,16 +307,18 @@ export default function MasterPremiumTemplate({
           <div className="relative z-10 px-8 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
             <div className="flex flex-col gap-6">
               <div className={`inline-flex items-center gap-2 ${c.lightBg} border ${c.border} border-opacity-30 px-4 py-1.5 rounded-full ${c.text} text-xs font-bold w-max uppercase tracking-widest`}>
-                <Activity className="w-4 h-4" /> {config.designTag}
+                <Activity className="w-4 h-4" /> {heroTagline || config.designTag}
               </div>
               <h1 className="text-5xl sm:text-7xl font-black tracking-tight text-white leading-tight">
-                {businessName.toUpperCase()}: <span className={c.text}>{suburb.toUpperCase()}</span>.
+                {heroHeadline ? heroHeadline : <>{businessName.toUpperCase()}: <span className={c.text}>{suburb.toUpperCase()}</span>.</>}
               </h1>
               <p className="text-slate-200 text-lg max-w-xl leading-relaxed">
-                {config.heroDefaultSubtitle} Operating across {city} with uncompromising quality and precision standards.
+                {heroSubheadline || `${config.heroDefaultSubtitle} Operating across ${city} with uncompromising quality and precision standards.`}
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
-                <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-4 px-10 rounded-xl text-sm transition shadow-xl`}>Engage Our Team</a>
+                <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-4 px-10 rounded-xl text-sm transition shadow-xl`}>
+                  {heroButtonText || 'Engage Our Team'}
+                </a>
               </div>
             </div>
           </div>
@@ -320,12 +330,16 @@ export default function MasterPremiumTemplate({
         <section id="about" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-12 items-center`}>
           <div className="flex flex-col gap-6">
             <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest`}>ABOUT US</h2>
-            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>Committed to Excellence in {suburb}</h3>
-            <p className={`${textMuted} text-base leading-relaxed`}>
-              {businessName} delivers industry-leading standards across {city} and surrounding regions. With a focus on precision, reliability, and client satisfaction, our experienced team ensures exceptional results on every engagement.
+            <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>
+              {aboutTitle || `Committed to Excellence in ${suburb}`}
+            </h3>
+            <p className={`${textMuted} text-base leading-relaxed whitespace-pre-line`}>
+              {aboutBody || `${businessName} delivers industry-leading standards across ${city} and surrounding regions. With a focus on precision, reliability, and client satisfaction, our experienced team ensures exceptional results on every engagement.`}
             </p>
             <div className="flex gap-4 pt-2">
-              <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>Get in Touch</a>
+              <a href="#contact" className={`${c.bg} ${c.hover} text-white font-bold uppercase tracking-wide py-3 px-8 rounded-xl text-xs transition shadow-md`}>
+                {aboutButtonText || 'Get in Touch'}
+              </a>
             </div>
           </div>
           <div className={`h-80 rounded-3xl ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-slate-200'} flex items-center justify-center font-bold text-slate-500 overflow-hidden shadow-lg`}>
