@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { useState, useEffect } from 'react';
 import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate';
 import { AUSTRALIAN_THEMES } from './constants/industryConfigs';
@@ -44,6 +46,7 @@ export default function App() {
   const [city, setCity] = useState('Melbourne');
   const [email, setEmail] = useState('contact@apex.com.au');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
+  const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
   // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>([
@@ -61,17 +64,18 @@ export default function App() {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
-  // Layout Section Toggles
+  // Layout Section Toggles (Home, About, Services, Contact active by default; others toggleable)
   const [activeSections, setActiveSections] = useState({
     hero: true,
+    about: true,        // Toggleable About Section
     liveRequest: true,
     services: true,
-    whyUs: true,
-    projects: true,
-    reviews: true,
-    products: true,
-    team: true,
-    faq: true,
+    whyUs: false,       // Default off (toggleable in sidebar)
+    projects: false,    // Default off (toggleable in sidebar)
+    reviews: false,     // Default off (toggleable in sidebar)
+    products: false,    // Default off (toggleable in sidebar)
+    team: false,        // Default off (toggleable in sidebar)
+    faq: false,         // Default off (toggleable in sidebar)
     contact: true
   });
 
@@ -533,8 +537,19 @@ export default function App() {
                         </button>
                       </div>
 
+                      <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">SiteForge Branding in Chat</span>
+                          <span className="text-[10px] text-slate-400">Display "Powered by SiteForge" badge</span>
+                        </div>
+                        <button onClick={() => setShowSiteForgeBranding(!showSiteForgeBranding)} className={`w-10 h-6 rounded-full p-1 transition-colors ${showSiteForgeBranding ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showSiteForgeBranding ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
                       {Object.entries({
                         hero: 'Hero Section',
+                        about: 'About Section',
                         services: 'Services (What We Do)',
                         whyUs: 'Why Choose Us',
                         projects: 'Recent Projects',
@@ -664,7 +679,7 @@ export default function App() {
                       headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList,
-                      locations, operatingHours
+                      locations, operatingHours, showSiteForgeBranding
                     };
 
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
