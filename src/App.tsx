@@ -40,29 +40,30 @@ export default function App() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // Core Business Info
+  // Core Business Info & Additional Legal Info (ABN / GST Footer Field)
   const [colorPalette, setColorPalette] = useState('blue');
   const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
   const [city, setCity] = useState('Melbourne');
   const [email, setEmail] = useState('contact@apex.com.au');
+  const [additionalLegalInfo, setAdditionalLegalInfo] = useState('ABN: 51 824 753 556');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
-  // Additional Locations (Strictly empty by default) & Operating Hours State
+  // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
     { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
     { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
   ]);
 
-  // Media & Logo Sizing Slider State (Max expanded to 150px)
+  // Media & Logo Sizing Slider State
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState<number>(40); 
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroOpacity, setHeroOpacity] = useState(85);
 
-  // Layout Section Toggles (Granular individual toggles for Call, WhatsApp, and Virtual Bot default to OFF)
+  // Layout Section Toggles
   const [activeSections, setActiveSections] = useState({
     hero: true,
     about: true,
@@ -74,7 +75,6 @@ export default function App() {
     team: false,
     faq: false,
     contact: true,
-    // Individual floating widget toggles (Default OFF)
     showCallButton: false,
     showWhatsappButton: false,
     showChatbotButton: false
@@ -136,7 +136,19 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  const handlePublish = () => { setIsPublishing(true); setTimeout(() => { setIsPublishing(false); alert('Successfully published to edge network!'); }, 1200); };
+  // PUBLISH HANDLER: Opens live site in a new window with SiteForge edge URL
+  const handlePublish = () => { 
+    setIsPublishing(true); 
+    setTimeout(() => { 
+      setIsPublishing(false); 
+      const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const liveUrl = `https://${slug}.siteforge.au`;
+      const confirmed = window.confirm(`Successfully published to edge network!\n\nLive URL: ${liveUrl}\n\nClick OK to open your live published website in a new window.`);
+      if (confirmed) {
+        window.open(liveUrl, '_blank');
+      }
+    }, 1200); 
+  };
 
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
   if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
@@ -288,6 +300,15 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* ADDITIONAL LEGAL INFO (ABN / GST Footer Input) */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
+                        <div>
+                          <input type="text" value={additionalLegalInfo} onChange={(e) => setAdditionalLegalInfo(e.target.value)} placeholder="ABN: 00 000 000 000" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          <span className="text-[10px] text-slate-500 mt-1 block">Displayed in footer (e.g. ABN, GST, or company registration).</span>
+                        </div>
+                      </div>
+
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">HQ Location Data</h4>
                         <div>
@@ -306,7 +327,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* ADDITIONAL LOCATIONS MANAGER (DEFAULT EMPTY) */}
+                      {/* ADDITIONAL LOCATIONS MANAGER */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <div className="flex justify-between items-center">
                           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Additional Locations</h4>
@@ -317,7 +338,7 @@ export default function App() {
                         {locations.map((loc, index) => (
                           <div key={loc.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
                             <button onClick={() => setLocations(locations.filter(l => l.id !== loc.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={loc.name} onChange={(e) => { const n = [...locations]; n[index].name = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Branch Name (e.g. Sydney Office)" />
+                            <input type="text" value={loc.name} onChange={(e) => { const n = [...locations]; n[index].name = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Branch Name" />
                             <input type="text" value={loc.address} onChange={(e) => { const n = [...locations]; n[index].address = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Street Address" />
                             <div className="grid grid-cols-2 gap-2">
                               <input type="text" value={loc.phone} onChange={(e) => { const n = [...locations]; n[index].phone = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Phone" />
@@ -337,15 +358,15 @@ export default function App() {
                         </div>
                         {operatingHours.map((item, index) => (
                           <div key={item.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex gap-2 items-center relative">
-                            <input type="text" value={item.days} onChange={(e) => { const n = [...operatingHours]; n[index].days = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-medium" placeholder="Days (e.g. Mon - Fri)" />
-                            <input type="text" value={item.hours} onChange={(e) => { const n = [...operatingHours]; n[index].hours = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Hours (e.g. 9am - 5pm)" />
+                            <input type="text" value={item.days} onChange={(e) => { const n = [...operatingHours]; n[index].days = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-medium" placeholder="Days" />
+                            <input type="text" value={item.hours} onChange={(e) => { const n = [...operatingHours]; n[index].hours = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Hours" />
                             <button onClick={() => setOperatingHours(operatingHours.filter(h => h.id !== item.id))} className="text-slate-500 hover:text-red-400 text-xs">✕</button>
                           </div>
                         ))}
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links (Footer Display)</h4>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links</h4>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instagram URL</label>
                           <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
@@ -364,7 +385,6 @@ export default function App() {
 
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
-                      {/* What We Do / Services Section */}
                       <div className="space-y-4">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
@@ -414,7 +434,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Recent Projects Section */}
                       <div className="space-y-4 pt-6 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
                         <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
@@ -430,7 +449,7 @@ export default function App() {
                               <input type="text" value={proj.subtitle} onChange={(e) => {
                                 const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
                                 current[index].subtitle = e.target.value; setProjectsList(current);
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle (e.g. Toorak)" />
+                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle" />
 
                               <input type="text" value={proj.title} onChange={(e) => { 
                                 const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
@@ -449,7 +468,7 @@ export default function App() {
                                   <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
                                     const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
                                     current[index].image = url; setProjectsList(current);
-                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
+                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
                                 </div>
                                 {proj.image && (
                                   <button onClick={() => {
@@ -468,7 +487,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* FAQs Section */}
                       <div className="space-y-4 pt-6 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Frequently Asked Questions (FAQs)</h3></div>
                         <div className="space-y-4 mt-4">
@@ -496,7 +514,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* LOGO SIZE SLIDER (Up to 150px, stable at 100px) */}
                       <div className="space-y-2 pt-2">
                         <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
                           Logo Size (Height)
@@ -622,7 +639,7 @@ export default function App() {
 
                             <div>
                               <label className="text-[10px] text-slate-400 uppercase font-bold">PayPal / Stripe Checkout Link</label>
-                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" placeholder="https://paypal.me/... or Stripe Link" />
+                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" placeholder="https://paypal.me/..." />
                             </div>
                           </div>
                         ))}

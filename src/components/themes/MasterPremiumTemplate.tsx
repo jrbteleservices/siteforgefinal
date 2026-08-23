@@ -315,7 +315,7 @@ export default function MasterPremiumTemplate({
         </div>
       </header>
 
-      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR (Home button jumps to top hero) */}
+      {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-3 py-2 flex justify-around items-center shadow-2xl`}>
         <a 
           href="#hero" 
@@ -681,7 +681,7 @@ export default function MasterPremiumTemplate({
             </div>
           </div>
 
-          <div className={`${bgCard} border ${borderMuted} p-10 rounded-3xl shadow-xl`}>
+          <div className={`${bgCard} border ${borderMuted} p-10 rounded-3xl shadow-xl flex flex-col justify-between`}>
             {submitted ? (
               <div className="bg-emerald-500/10 border border-emerald-500/20 p-10 rounded-2xl text-center flex flex-col items-center gap-4 h-full justify-center">
                 <CheckCircle className="w-14 h-14 text-emerald-500" />
@@ -712,6 +712,13 @@ export default function MasterPremiumTemplate({
                   {loading ? 'Processing...' : 'Submit Inquiry'}
                 </button>
               </form>
+            )}
+
+            {/* ADDITIONAL LEGAL INFO / ABN FOOTER DISPLAY */}
+            {additionalLegalInfo && (
+              <div className="mt-8 pt-4 border-t border-slate-800 text-center text-xs text-slate-500 font-medium">
+                {additionalLegalInfo}
+              </div>
             )}
           </div>
         </footer>
