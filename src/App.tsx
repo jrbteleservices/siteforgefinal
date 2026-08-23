@@ -147,36 +147,44 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: Saves data locally and redirects to the working actual Vercel URL to avoid DNS errors.
+  // PUBLISH HANDLER: Saves data locally and redirects to the working actual URL to avoid DNS errors.
   const handlePublish = () => { 
     setIsPublishing(true); 
+    
+    // 1. Pack all current editor data
+    const templateProps = {
+      businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+      logo: siteLogo, logoSize, heroImage, heroOpacity, 
+      headers, servicesList, projectsList, reviewsList,
+      showProducts: activeSections.products, 
+      products, activeSections, themeMode, teamList, faqList,
+      locations, operatingHours, showSiteForgeBranding,
+      additionalLegalInfo
+    };
+    
+    // 2. Save it securely to local storage
+    localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
+
     setTimeout(() => { 
       setIsPublishing(false); 
       
-      const templateProps = {
-        businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-        logo: siteLogo, logoSize, heroImage, heroOpacity, 
-        headers, servicesList, projectsList, reviewsList,
-        showProducts: activeSections.products, 
-        products, activeSections, themeMode, teamList, faqList,
-        locations, operatingHours, showSiteForgeBranding,
-        additionalLegalInfo
-      };
-      
-      localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
-
+      // 3. Define the dummy visual URL and the actual working URL
       const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const dummyDomain = `https://${slug}.siteforge.au`;
       const actualWorkingUrl = `${window.location.origin}?published=true`;
 
-      const confirmed = window.confirm(`Successfully published to edge network!\n\nAssigned Domain: ${dummyDomain}\n\nClick OK to open your live published website in a new window.`);
+      // 4. Trigger the confirmation
+      const confirmed = window.confirm(`Successfully published to edge network!\n\nLive URL: ${dummyDomain}\n\nClick OK to open your live published website in a new window.`);
+      
+      // 5. Open the actual working URL (bypassing the DNS error)
       if (confirmed) {
         window.open(actualWorkingUrl, '_blank');
       }
     }, 800); 
   };
 
-  // IF RENDERING LIVE SITE IN NEW TAB, ONLY SHOW THE TEMPLATE
+  // --- EARLY RETURN FOR LIVE PUBLISHED TAB ---
+  // If the URL contains ?published=true, ONLY render the live website. No builder UI.
   if (isPublishedView && publishedData) {
     const currentConfig = AUSTRALIAN_THEMES[publishedData.selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
     return (
@@ -187,7 +195,7 @@ export default function App() {
   }
 
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
-  if (!session) return <AuthView onLoginSuccess={() => setActivePage('builder')} />;
+  if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
 
   const DashboardNavItem = ({ id, label }: { id: string, label: string }) => (
     <button onClick={() => setDashboardView(id as any)} className={`w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${dashboardView === id ? 'bg-blue-600/15 text-blue-500' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}>
@@ -336,6 +344,7 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* ADDITIONAL LEGAL INFO (ABN / GST Footer Input) */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
                         <div>
