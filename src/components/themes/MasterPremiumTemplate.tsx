@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Globe, Share2, Star, Video, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Edit3, Trash2, Plus, MoveUp, MoveDown, Eye } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -16,15 +16,12 @@ interface MasterTemplateProps {
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[];
-  isEditorActive?: boolean; // When true, shows live Elementor-style edit badges & controls
-  onUpdateContent?: (section: string, data: any) => void;
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
-  showProducts, products, activeSections, themeMode, teamList = [], faqList = [],
-  isEditorActive = false
+  showProducts, products, activeSections, themeMode, teamList = [], faqList = []
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -33,9 +30,6 @@ export default function MasterPremiumTemplate({
   const [leadMessage, setLeadMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Active modal or selected element for inline editor
-  const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
@@ -85,7 +79,7 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING WHATSAPP + CALL BUTTONS (MOBILE & DESKTOP) */}
+      {/* FLOATING WHATSAPP & CALL ACTION WIDGETS */}
       {activeSections.liveRequest && (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
           <a 
@@ -113,7 +107,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* HEADER / NAVIGATION */}
+      {/* HEADER */}
       <header className={`sticky top-0 z-40 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-sm`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -174,7 +168,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* SERVICES / WHAT WE DO SECTION */}
+      {/* SERVICES SECTION */}
       {activeSections.services && (
         <section id="services" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -229,7 +223,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PROJECTS / PORTFOLIO SECTION */}
+      {/* PROJECTS SECTION */}
       {activeSections.projects && (
         <section id="projects" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -296,10 +290,11 @@ export default function MasterPremiumTemplate({
                 ) : (
                   <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold`}>Product Image</div>
                 )}
-                <div className="p-8 flex flex-col justify-between flex-1 gap-6">
+                <div className="p-8 flex flex-col justify-between flex-1 gap-4">
                   <div>
                     <h4 className={`text-xl font-bold ${textMain}`}>{prod.name}</h4>
-                    <div className={`text-3xl font-black ${c.text} mt-2`}>${prod.price}</div>
+                    {prod.desc && <p className={`${textMuted} text-xs mt-2 leading-relaxed`}>{prod.desc}</p>}
+                    <div className={`text-3xl font-black ${c.text} mt-4`}>${prod.price}</div>
                   </div>
                   <a 
                     href={prod.checkoutUrl || '#contact'} 
@@ -358,7 +353,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* FOOTER & SOCIAL MEDIA ICONS PLACED UNDER STREET ADDRESS */}
+      {/* FOOTER & AUTHENTIC BRAND SOCIAL SVG ICONS PLACED UNDER STREET ADDRESS */}
       {activeSections.contact && (
         <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
           <div className="flex flex-col gap-6">
@@ -383,11 +378,23 @@ export default function MasterPremiumTemplate({
               </div>
             </div>
 
-            {/* Social media links positioned strictly under the street address info */}
+            {/* AUTHENTIC BRANDED SOCIAL SVG ICONS (INSTAGRAM, TIKTOK, FACEBOOK) */}
             <div className="flex items-center gap-3 pt-2">
-              {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Globe className="w-5 h-5" /></a>}
-              {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Share2 className="w-5 h-5" /></a>}
-              {socials.tiktok && <a href={socials.tiktok} target="_blank" rel="noreferrer" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:${c.bg} hover:text-white transition`}><Video className="w-5 h-5" /></a>}
+              {socials.instagram && (
+                <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+              )}
+              {socials.tiktok && (
+                <a href={socials.tiktok} target="_blank" rel="noreferrer" title="TikTok" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-slate-900 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-1.02-.97-.5-1.81-1.22-2.48-2.08v9.92c-.03 2.05-1.12 3.99-2.92 5.04-1.8 1.05-4.08 1.05-5.88-.02-1.8-1.07-2.93-3.02-2.95-5.09-.02-2.07 1.07-4.04 2.85-5.12 1.78-1.08 4.05-1.06 5.83.05.02.39.04.78.04 1.17 0 1.01-.36 1.99-.99 2.74-.63.75-1.51 1.2-2.51 1.25-1 .05-1.97-.29-2.67-1-.7-.71-1.04-1.68-1.01-2.67.03-.99.41-1.92 1.1-2.61.69-.69 1.62-1.07 2.61-1.1 1.3-.04 2.6-.01 3.9-.02z"/></svg>
+                </a>
+              )}
+              {socials.facebook && (
+                <a href={socials.facebook} target="_blank" rel="noreferrer" title="Facebook" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-blue-600 hover:text-white transition`}>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.5 5 15.5 5H18V0h-3.808C10.59 0 9 1.581 9 4.75V8z"/></svg>
+                </a>
+              )}
             </div>
           </div>
 
