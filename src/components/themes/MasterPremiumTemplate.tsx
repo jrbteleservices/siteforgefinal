@@ -152,7 +152,7 @@ export default function MasterPremiumTemplate({
   };
   const c = themeColors[colorPalette] || themeColors.blue;
 
-  // Check if any "More" dropdown item is active
+  // Check if any "MORE" dropdown item is active
   const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq;
 
   return (
@@ -256,7 +256,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STICKY HEADER WITH HOME, ABOUT, SERVICES, CONTACT & DYNAMIC "MORE" DROPDOWN */}
+      {/* STICKY HEADER WITH CAPITALIZED "MORE" DROPDOWN BESIDE CONTACT */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <a href="#" className="flex items-center gap-3 cursor-pointer group">
           {logo ? (
@@ -273,44 +273,43 @@ export default function MasterPremiumTemplate({
           <a href="#" className={`hover:${c.text} transition`}>Home</a>
           <a href="#about" className={`hover:${c.text} transition`}>About</a>
           {activeSections.services && <a href="#services" className={`hover:${c.text} transition`}>Services</a>}
-          
-          {/* MORE DROPDOWN FOR TOGGLEABLE SECTIONS */}
+          <a href="#contact" className={`hover:${c.text} transition`}>Contact</a>
+
+          {/* CAPITALIZED "MORE" DROPDOWN FOR TOGGLEABLE SECTIONS BESIDE CONTACT */}
           {hasMoreItems && (
             <div className="relative">
               <button 
                 onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
-                className={`flex items-center gap-1 hover:${c.text} transition focus:outline-none`}
+                className={`flex items-center gap-1 hover:${c.text} transition focus:outline-none uppercase font-bold`}
               >
                 <span>More</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {moreDropdownOpen && (
-                <div className={`absolute top-full mt-2 w-48 ${bgCard} border ${borderMuted} rounded-xl shadow-2xl py-2 flex flex-col z-50 animate-in fade-in slide-in-from-top-2`}>
+                <div className={`absolute top-full right-0 mt-2 w-48 ${bgCard} border ${borderMuted} rounded-xl shadow-2xl py-2 flex flex-col z-50 animate-in fade-in slide-in-from-top-2`}>
                   {activeSections.whyUs && (
-                    <a href="#whyUs" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Why Us</a>
+                    <a href="#whyUs" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Why Us</a>
                   )}
                   {activeSections.projects && (
-                    <a href="#projects" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Projects</a>
+                    <a href="#projects" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Projects</a>
                   )}
                   {activeSections.reviews && (
-                    <a href="#reviews" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Reviews</a>
+                    <a href="#reviews" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Reviews</a>
                   )}
                   {showProducts && activeSections.products && (
-                    <a href="#products" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Products</a>
+                    <a href="#products" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Products</a>
                   )}
                   {activeSections.team && (
-                    <a href="#team" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>Team</a>
+                    <a href="#team" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>Team</a>
                   )}
                   {activeSections.faq && (
-                    <a href="#faq" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold hover:${c.text} hover:bg-slate-800/10 transition`}>FAQ</a>
+                    <a href="#faq" onClick={() => setMoreDropdownOpen(false)} className={`px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:${c.text} hover:bg-slate-800/10 transition`}>FAQ</a>
                   )}
                 </div>
               )}
             </div>
           )}
-
-          <a href="#contact" className={`hover:${c.text} transition`}>Contact</a>
         </nav>
 
         <div className="flex items-center gap-4">
