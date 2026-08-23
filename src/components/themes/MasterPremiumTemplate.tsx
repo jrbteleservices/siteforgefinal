@@ -182,7 +182,7 @@ export default function MasterPremiumTemplate({
             {activeServices.map((service) => (
               <div key={service.id} className={`${bgCard} border ${borderMuted} hover:${c.border} shadow-sm hover:shadow-xl rounded-2xl overflow-hidden transition-all flex flex-col group`}>
                 {service.image ? (
-                  <div className="h-56 w-full"><img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
+                  <div className="h-56 w-full flex-shrink-0"><img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" /></div>
                 ) : (
                   <div className={`h-40 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center border-b ${borderMuted}`}>
                     <ArrowRight className={`w-10 h-10 ${textMuted} group-hover:${c.text} transition group-hover:translate-x-2`} />
@@ -225,7 +225,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PROJECTS SECTION */}
+      {/* PROJECTS SECTION — UNIFORM STACKED CARDS */}
       {activeSections.projects && (
         <section id="projects" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -234,19 +234,21 @@ export default function MasterPremiumTemplate({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {activeProjects.map((proj) => (
-              <div key={proj.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden flex flex-col group relative shadow-md`}>
+              <div key={proj.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-md flex flex-col h-full group`}>
                 {proj.image ? (
-                  <div className="h-72 w-full relative">
-                    <div className="absolute inset-0 bg-slate-900/40 z-10 group-hover:bg-slate-900/20 transition duration-500"></div>
-                    <img src={proj.image} alt={proj.title} className="w-full h-full object-cover relative z-0" />
+                  <div className="h-64 w-full relative flex-shrink-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-slate-900/30 z-10 group-hover:bg-slate-900/10 transition duration-500"></div>
+                    <img src={proj.image} alt={proj.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500 relative z-0" />
                   </div>
                 ) : (
-                  <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm`}>Media Showcase</div>
+                  <div className={`h-64 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} font-bold text-sm flex-shrink-0`}>Media Showcase</div>
                 )}
-                <div className="p-6 flex flex-col gap-2 bg-slate-900">
-                  <span className={`text-[10px] font-bold ${c.text} uppercase tracking-widest`}>{proj.subtitle}</span>
-                  <h4 className="font-bold text-white text-xl">{proj.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{proj.desc}</p>
+                <div className="p-8 flex flex-col flex-1 justify-between bg-slate-900 text-white">
+                  <div>
+                    <span className={`text-[10px] font-bold ${c.text} uppercase tracking-widest`}>{proj.subtitle}</span>
+                    <h4 className="font-bold text-white text-2xl mt-1">{proj.title}</h4>
+                    <p className="text-sm text-slate-300 mt-3 leading-relaxed">{proj.desc}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -286,11 +288,11 @@ export default function MasterPremiumTemplate({
             {activeProducts.map((prod) => (
               <div key={prod.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between group`}>
                 {prod.image ? (
-                  <div className="h-48 w-full overflow-hidden">
+                  <div className="h-48 w-full overflow-hidden flex-shrink-0">
                     <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   </div>
                 ) : (
-                  <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold`}>Product Image</div>
+                  <div className={`h-36 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} flex items-center justify-center ${textMuted} text-xs font-bold flex-shrink-0`}>Product Image</div>
                 )}
                 <div className="p-8 flex flex-col justify-between flex-1 gap-4">
                   <div>
@@ -314,7 +316,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* EXECUTIVE TEAM SECTION (CONDITIONALLY RENDERED BASED ON activeSections.team) */}
+      {/* EXECUTIVE TEAM SECTION */}
       {activeSections.team && (
         <section id="team" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -325,9 +327,9 @@ export default function MasterPremiumTemplate({
             {activeTeam.map((member) => (
               <div key={member.id} className={`${bgCard} border ${borderMuted} rounded-3xl overflow-hidden shadow-sm flex flex-col`}>
                 {member.image ? (
-                  <div className="h-72 w-full"><img src={member.image} alt={member.name} className="w-full h-full object-cover" /></div>
+                  <div className="h-72 w-full flex-shrink-0"><img src={member.image} alt={member.name} className="w-full h-full object-cover" /></div>
                 ) : (
-                  <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted}`}>No Photo</div>
+                  <div className={`h-72 ${isDark ? 'bg-slate-800' : 'bg-slate-200'} flex items-center justify-center ${textMuted} flex-shrink-0`}>No Photo</div>
                 )}
                 <div className="p-6 text-center">
                   <h4 className={`text-xl font-bold ${textMain}`}>{member.name}</h4>
@@ -357,7 +359,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* FOOTER & LOCATIONS / HOURS */}
+      {/* FOOTER */}
       {activeSections.contact && (
         <footer id="contact" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted} grid grid-cols-1 lg:grid-cols-2 gap-16`}>
           <div className="flex flex-col gap-6">
@@ -381,7 +383,6 @@ export default function MasterPremiumTemplate({
                 <span className={textMain}>{streetAddress}, {suburb}, {city}</span>
               </div>
 
-              {/* RENDER ADDITIONAL LOCATIONS */}
               {locations.map((loc) => (
                 <div key={loc.id} className="flex items-center gap-4 border-t border-slate-800 pt-4">
                   <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><MapPin className="w-5 h-5" /></div>
@@ -392,7 +393,6 @@ export default function MasterPremiumTemplate({
                 </div>
               ))}
 
-              {/* RENDER OPERATING HOURS */}
               {operatingHours.length > 0 && (
                 <div className="flex items-start gap-4 border-t border-slate-800 pt-4">
                   <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Clock className="w-5 h-5" /></div>
@@ -406,7 +406,6 @@ export default function MasterPremiumTemplate({
               )}
             </div>
 
-            {/* BRANDED SOCIAL ICONS */}
             <div className="flex items-center gap-3 pt-2">
               {socials.instagram && (
                 <a href={socials.instagram} target="_blank" rel="noreferrer" title="Instagram" className={`w-11 h-11 rounded-xl border ${borderMuted} flex items-center justify-center ${textMuted} hover:bg-pink-600 hover:text-white transition`}>
