@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -18,12 +18,14 @@ interface MasterTemplateProps {
   headers: any; servicesList: ServiceItem[]; projectsList: ProjectItem[]; reviewsList: ReviewItem[];
   showProducts: boolean; products: ProductItem[]; activeSections: any; themeMode: 'light' | 'dark';
   teamList?: TeamMemberItem[]; faqList?: FaqItem[]; locations?: LocationItem[]; operatingHours?: OperatingHourItem[];
+  showSiteForgeBranding?: boolean; // Toggle for White-Label / Branding removal
 }
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
   logo, logoSize = 40, heroImage, heroOpacity, headers, servicesList, projectsList, reviewsList,
-  showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = []
+  showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = [],
+  showSiteForgeBranding = true
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -32,6 +34,14 @@ export default function MasterPremiumTemplate({
   const [leadMessage, setLeadMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // --- CHATBOT STATE ---
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
+    { sender: 'bot', text: `Hi there! Welcome to ${businessName}. How can I assist you today? Feel free to ask about our pricing, services, or operating hours!` }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [leadCaptured, setLeadCaptured] = useState(false);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
   const overlayOpacity = heroOpacity / 100; 
@@ -46,6 +56,57 @@ export default function MasterPremiumTemplate({
     { id: 'f2', question: 'How quickly can we initiate a project consultation?', answer: 'Our managing partners typically respond to priority inquiries within 2 hours.' }
   ];
   const activeFaqs = faqList.length > 0 ? faqList : defaultFaqs;
+
+  // --- TOKEN-FREE KNOWLEDGE MATCHER & LEAD CAPTURE ---
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userText = chatInput.trim();
+    const newMessages = [...chatMessages, { sender: 'user' as const, text: userText }];
+    setChatMessages(newMessages);
+    setChatInput('');
+
+    setTimeout(() => {
+      const lower = userText.toLowerCase();
+      let botResponse = '';
+
+      // Check Products / Pricing
+      const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package'));
+      if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much'))) {
+        botResponse = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} You can securely purchase it directly from our Services & Packages section!`;
+      } 
+      // Check Services / What We Do
+      else if (lower.includes('service') || lower.includes('offer') || lower.includes('do you')) {
+        const serviceTitles = activeServices.map(s => s.title).join(', ');
+        botResponse = `We specialize in: ${serviceTitles}. Would you like me to have our team give you a callback?`;
+      } 
+      // Check Hours
+      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time') || lower.includes('day')) {
+        if (operatingHours.length > 0) {
+          const schedule = operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ');
+          botResponse = `Our operating schedule is: ${schedule}.`;
+        } else {
+          botResponse = `We operate Monday to Saturday with standard business hours. Feel free to reach out anytime!`;
+        }
+      } 
+      // Check Location / Address
+      else if (lower.includes('location') || lower.includes('address') || lower.includes('where') || lower.includes('suburb')) {
+        botResponse = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
+      } 
+      // Lead Capture Trigger
+      else if (!leadCaptured && (lower.includes('contact') || lower.includes('callback') || lower.includes('quote') || lower.includes('book') || newMessages.length > 3)) {
+        setLeadCaptured(true);
+        botResponse = `I would love to connect you with our team! Please reply with your phone number or call us directly at ${phone}, and we will get right back to you.`;
+      } 
+      // Fallback
+      else {
+        botResponse = `I couldn't find exact details for that in our live system. Please give us a direct call at ${phone} or email us at ${email} and our team will be happy to help!`;
+      }
+
+      setChatMessages([...newMessages, { sender: 'bot', text: botResponse }]);
+    }, 600);
+  };
 
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true);
@@ -81,31 +142,95 @@ export default function MasterPremiumTemplate({
   return (
     <div className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative`}>
       
-      {/* FLOATING WHATSAPP & CALL ACTION WIDGETS */}
+      {/* FLOATING WHATSAPP, CALL & INTELLIGENT CHATBOT WIDGET */}
       {activeSections.liveRequest && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-          <a 
-            href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
-            target="_blank" 
-            rel="noreferrer"
-            className="w-14 h-14 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-            title="Chat on WhatsApp"
-          >
-            <MessageCircle className="w-7 h-7 fill-white text-emerald-500" />
-            <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-              Chat on WhatsApp
-            </span>
-          </a>
-          <a 
-            href={`tel:${phone}`}
-            className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
-            title="Call Us Direct"
-          >
-            <Phone className="w-6 h-6" />
-            <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
-              Call Us Now
-            </span>
-          </a>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+          
+          {/* CHATBOT WINDOW POPUP */}
+          {chatOpen && (
+            <div className="w-[360px] h-[480px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <div className={`p-4 ${c.bg} text-white flex justify-between items-center shadow-md`}>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm">{businessName} Assistant</h4>
+                    <span className="text-[10px] text-emerald-300 flex items-center gap-1">● Online & Ready</span>
+                  </div>
+                </div>
+                <button onClick={() => setChatOpen(false)} className="text-white hover:opacity-80"><X className="w-5 h-5" /></button>
+              </div>
+
+              {/* CHAT MESSAGES */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed ${msg.sender === 'user' ? `${c.bg} text-white rounded-br-none` : 'bg-slate-800 text-slate-200 rounded-bl-none border border-slate-700'}`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* CHAT INPUT FORM */}
+              <form onSubmit={handleSendMessage} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+                <input 
+                  type="text" 
+                  value={chatInput} 
+                  onChange={(e) => setChatInput(e.target.value)} 
+                  placeholder="Ask about price, services, hours..." 
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500" 
+                />
+                <button type="submit" className={`${c.bg} ${c.hover} text-white px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center`}>
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </form>
+
+              {/* WHITE-LABEL BRANDING FOOTER */}
+              {showSiteForgeBranding && (
+                <div className="bg-slate-950 py-1.5 px-3 text-center border-t border-slate-900 text-[9px] text-slate-500">
+                  Powered by <span className="font-bold text-slate-400">SiteForge</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FLOATING ACTION BUTTONS */}
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => setChatOpen(!chatOpen)}
+              className="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              title="Open Virtual Assistant"
+            >
+              <Bot className="w-7 h-7" />
+              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                Virtual Assistant
+              </span>
+            </button>
+            <a 
+              href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(businessName)},%20I%20would%20like%20to%20inquire%20about%20your%20services.`} 
+              target="_blank" 
+              rel="noreferrer"
+              className="w-14 h-14 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              title="Chat on WhatsApp"
+            >
+              <MessageCircle className="w-7 h-7 fill-white text-emerald-500" />
+              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                Chat on WhatsApp
+              </span>
+            </a>
+            <a 
+              href={`tel:${phone}`}
+              className="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 group relative"
+              title="Call Us Direct"
+            >
+              <Phone className="w-6 h-6" />
+              <span className="absolute right-16 bg-slate-900 text-white text-xs px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition whitespace-nowrap shadow-lg font-semibold pointer-events-none">
+                Call Us Now
+              </span>
+            </a>
+          </div>
         </div>
       )}
 
@@ -225,7 +350,7 @@ export default function MasterPremiumTemplate({
         </section>
       )}
 
-      {/* PROJECTS SECTION — UNIFORM STACKED CARDS */}
+      {/* PROJECTS SECTION */}
       {activeSections.projects && (
         <section id="projects" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
           <div className="text-center max-w-2xl mx-auto mb-16">
