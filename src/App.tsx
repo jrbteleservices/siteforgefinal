@@ -136,17 +136,18 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // PUBLISH HANDLER: Restored with user interaction fallback for new window tab opening
+  // PUBLISH HANDLER: Opens the live website immediately in a new tab on click to bypass popup blockers
   const handlePublish = () => { 
+    const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const liveUrl = `https://${slug}.siteforge.au`;
+    
+    // Open immediately upon user click
+    window.open(liveUrl, '_blank');
+
     setIsPublishing(true); 
     setTimeout(() => { 
       setIsPublishing(false); 
-      const slug = businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const liveUrl = `https://${slug}.siteforge.au`;
-      const confirmed = window.confirm(`Successfully published to edge network!\n\nLive URL: ${liveUrl}\n\nClick OK to open your live published website in a new window.`);
-      if (confirmed) {
-        window.open(liveUrl, '_blank');
-      }
+      alert(`Successfully published to edge network!\n\nLive URL: ${liveUrl}`);
     }, 1200); 
   };
 
