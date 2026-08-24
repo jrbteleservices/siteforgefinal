@@ -45,36 +45,37 @@ export default function App() {
   const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('builder');
   const [dashboardView, setDashboardView] = useState<'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('leads');
   
-  // --- BUILDER TABS ---
-  const [editorTab, setEditorTab] = useState<'content' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
+  // --- BUILDER TABS & MULTI-PAGE TARGETING ---
+  const [editorTab, setEditorTab] = useState<'content' | 'pages' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
+  const [selectedSubPage, setSelectedSubPage] = useState<'home' | 'service-webdev' | 'service-seo' | 'location-vasaiwest' | 'location-vasaieast'>('home');
+  
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
   // Core Business Info & Additional Legal Info
   const [colorPalette, setColorPalette] = useState('blue');
-  const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
-  const [city, setCity] = useState('Melbourne');
-  const [email, setEmail] = useState('contact@apex.com.au');
-  const [additionalLegalInfo, setAdditionalLegalInfo] = useState('ABN: 51 824 753 556');
+  const [streetAddress, setStreetAddress] = useState('Station Road, Vasai West');
+  const [city, setCity] = useState('Vasai-Virar');
+  const [email, setEmail] = useState('contact@vasaiweb.in');
+  const [additionalLegalInfo, setAdditionalLegalInfo] = useState('VasaiWeb Digital Agency | Serving Vasai & Global Brands');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
 
-  // NEW: Dynamic Hero and About Text Overrides (Including Buttons)
-  const [heroTagline, setHeroTagline] = useState('');
-  const [heroHeadline, setHeroHeadline] = useState('');
-  const [heroSubheadline, setHeroSubheadline] = useState('');
-  const [heroButtonText, setHeroButtonText] = useState('Engage Our Team');
+  // Dynamic Hero and About Text Overrides (Including Buttons)
+  const [heroTagline, setHeroTagline] = useState('VASAI’S PREMIER DIGITAL AGENCY');
+  const [heroHeadline, setHeroHeadline] = useState('Websites That Dominate. SEO That Ranks #1.');
+  const [heroSubheadline, setHeroSubheadline] = useState('Stop losing local customers to outdated competition. We build lightning-fast web architecture and elite SEO engines for businesses across Vasai.');
+  const [heroButtonText, setHeroButtonText] = useState('Get Free Audit');
   
-  const [aboutTitle, setAboutTitle] = useState('');
-  const [aboutBody, setAboutBody] = useState('');
-  const [aboutButtonText, setAboutButtonText] = useState('Get In Touch');
+  const [aboutTitle, setAboutTitle] = useState('Engineered for Absolute Market Dominance');
+  const [aboutBody, setAboutBody] = useState('VasaiWeb helps local businesses and global brands outnumber their competition. We combine sub-second edge web performance with aggressive organic search strategies to make sure your brand is the default choice.');
+  const [aboutButtonText, setAboutButtonText] = useState('Explore Services');
 
   // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
-    { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
-    { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
+    { id: '1', days: 'Monday – Saturday', hours: '9:00 AM – 7:00 PM' }
   ]);
 
   // Media & Logo Sizing Slider State
@@ -89,46 +90,54 @@ export default function App() {
     hero: true,
     about: true,
     services: true,
-    whyUs: false,
-    projects: false,
-    reviews: false,
-    products: false,
+    whyUs: true,
+    projects: true,
+    reviews: true,
+    products: true,
     team: false,
-    faq: false,
+    faq: true,
     contact: true,
-    showCallButton: false,
-    showWhatsappButton: false,
-    showChatbotButton: false
+    showCallButton: true,
+    showWhatsappButton: true,
+    showChatbotButton: true
   });
 
   // Headers State
   const [headers, setHeaders] = useState({
-    services: { sub: 'OUR CAPABILITIES', main: 'What We Do', desc: 'Comprehensive property and maintenance services.' },
-    whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
-    projects: { sub: 'PORTFOLIO', main: 'Recent Projects' },
-    reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
+    services: { sub: 'OUR CORE SOLUTIONS', main: 'High-Impact Digital Services', desc: 'Everything your business needs to capture market share online.' },
+    whyUs: { sub: 'THE VASAIWEB ADVANTAGE', main: 'Why Local Businesses Choose Us' },
+    projects: { sub: 'TRACK RECORD', main: 'Recent Client Victories' },
+    reviews: { sub: 'TESTIMONIALS', main: 'What Founders & Owners Say' }
   });
 
   // Fully Editable Arrays
-  const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
-  const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
+  const [servicesList, setServicesList] = useState<ServiceItem[]>([
+    { id: 's1', title: 'High-Performance Web Development', desc: 'Lightning-fast, mobile-first websites built to convert casual visitors into high-paying clients.' },
+    { id: 's2', title: 'Vasai Local SEO & Map Domination', desc: 'Secure the #1 position in Google Maps and organic listings so customers find you first.' },
+    { id: 's3', title: 'AI Automation & Lead Funnels', desc: 'Deploy 24/7 AI chatbots and instant WhatsApp lead capture systems directly on your domain.' }
+  ]);
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>([
+    { id: 'p1', subtitle: 'Vasai West', title: 'Luxury Real Estate Portal', desc: 'Engineered a high-speed property showcase resulting in a 240% increase in qualified buyer leads.' },
+    { id: 'p2', subtitle: 'Vasai Industrial Estate', title: 'B2B Manufacturing Export Hub', desc: 'Upgraded legacy architecture to sub-second load speeds, capturing international buyer inquiries.' },
+    { id: 'p3', subtitle: 'Manikpur', title: 'Premier Coaching Institute', desc: 'Built an automated student enrollment funnel integrated with SMS and WhatsApp routing.' }
+  ]);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>([
-    { id: '1', name: 'Sarah Jenkins', rating: 5, text: 'Absolutely fantastic service. Arrived on time and fixed the issue perfectly. Highly recommended!' },
-    { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
+    { id: '1', name: 'Rajesh Patil', rating: 5, text: 'VasaiWeb completely transformed our online presence. We went from zero local visibility to ranking #1 on Google Maps in less than 60 days!' },
+    { id: '2', name: 'Anita D’Souza', rating: 5, text: 'The website speed is unbelievable. Our customer inquiries tripled within the first week of launch.' }
   ]);
   const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Standard Service Call', desc: 'Professional diagnostic inspection and preliminary repair.', price: '99', image: '', checkoutUrl: 'https://paypal.me/sample' }
+    { id: '1', name: 'Vasai Business Starter Site', desc: 'Complete 5-page lightning-fast website, mobile optimized, contact forms, and basic SEO.', price: '14999', checkoutUrl: '' },
+    { id: '2', name: 'Local SEO Map Domination Pack', desc: 'Google Business Profile optimization, keyword targeting, review velocity engine, and local citations.', price: '7999', checkoutUrl: '' }
   ]);
-  const [teamList, setTeamList] = useState<TeamMemberItem[]>([
-    { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: '' }
-  ]);
+  const [teamList, setTeamList] = useState<TeamMemberItem[]>([]);
   const [faqList, setFaqList] = useState<FaqItem[]>([
-    { id: 'f1', question: 'What areas do you service?', answer: 'We service all metropolitan areas.' }
+    { id: 'f1', question: 'How long does it take to build and launch our website?', answer: 'Unlike traditional agencies that take months, our SiteForge architecture allows us to deploy fully finalized websites in just 3 to 5 days.' },
+    { id: 'f2', question: 'How do you guarantee #1 rankings on Google Maps?', answer: 'We optimize your Google Business Profile, target exact-match local keywords, and implement automated review velocity systems that Google algorithmically favors.' }
   ]);
 
   // Profiles State
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'luxury_builder' }
+    { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'luxury_builder' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
@@ -167,7 +176,7 @@ export default function App() {
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo
+      additionalLegalInfo, selectedSubPage
     };
     
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
@@ -195,7 +204,7 @@ export default function App() {
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo
+      additionalLegalInfo, selectedSubPage
     };
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
@@ -226,22 +235,19 @@ export default function App() {
            <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
             <div className="p-6 border-b border-slate-800">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">SF</div>
-                <span className="font-bold text-lg tracking-tight text-white">SiteForge</span>
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">VW</div>
+                <span className="font-bold text-lg tracking-tight text-white">VasaiWeb Engine</span>
               </div>
               <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Launch Builder</button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
-              <DashboardNavItem id="leads" label="Lead Pipeline" />
+              <DashboardNavItem id="leads" label="Local Inquiries" />
               <DashboardNavItem id="routing" label="Lead Routing Rules" />
-              <DashboardNavItem id="domains" label="Domain Manager" />
+              <DashboardNavItem id="domains" label="Domain Manager (vasaiweb.in)" />
               <DashboardNavItem id="portal" label="Client Portal" />
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-4 mt-6">System & Config</div>
-              <DashboardNavItem id="analytics" label="Platform Analytics" />
-              <DashboardNavItem id="billing" label="Subscriptions & Billing" />
-              <DashboardNavItem id="emails" label="Email Templates" />
-              <DashboardNavItem id="webhooks" label="Webhooks & APIs" />
-              <DashboardNavItem id="support" label="Support Tickets" />
+              <DashboardNavItem id="analytics" label="SEO Analytics" />
+              <DashboardNavItem id="billing" label="Billing & Packages" />
             </div>
             <div className="p-4 border-t border-slate-800">
               <button onClick={() => supabase.auth.signOut()} className="text-red-400 text-sm font-bold w-full text-left px-4 hover:text-red-300">Sign Out</button>
@@ -274,7 +280,7 @@ export default function App() {
             <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
               <div className="flex items-center gap-4">
                 <button onClick={() => setActivePage('dashboard')} className="text-slate-400 hover:text-white transition text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-800">&larr; Dashboard</button>
-                <span className="text-sm font-bold text-white flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName}</span>
+                <span className="text-sm font-bold text-white flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName} ({selectedSubPage})</span>
               </div>
               <div className="flex items-center gap-3">
                 <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2">
@@ -302,16 +308,41 @@ export default function App() {
                   </div>
                 )}
 
+                {/* TAB NAVIGATION INCLUDING MULTI-PAGE SELECTOR */}
                 <div className="flex p-2 gap-1 border-b border-slate-800 bg-slate-900/50 flex-wrap">
-                  {(['content', 'sections', 'media', 'layout', 'commerce', 'team'] as const).map(tab => (
-                    <button key={tab} onClick={() => setEditorTab(tab)} className={`px-3 py-2 text-xs font-bold rounded-lg capitalize transition ${editorTab === tab ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>
-                      {tab}
+                  {(['content', 'pages', 'sections', 'media', 'layout', 'commerce', 'team'] as const).map(tab => (
+                    <button key={tab} onClick={() => setEditorTab(tab)} className={`px-3 py-2 text-xs font-bold rounded-lg capitalize transition ${editorTab === tab ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
+                      {tab === 'pages' ? '📁 Sub-Pages (SEO)' : tab}
                     </button>
                   ))}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                   
+                  {/* MULTI-PAGE ROUTING SELECTOR TAB */}
+                  {editorTab === 'pages' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
+                        <h4 className="font-bold text-blue-400 text-xs uppercase tracking-wider mb-1">Multi-Page SEO Architecture</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed">Select which page you want to edit. Each page has its own dedicated URL (`/services/...` or `/locations/...`) optimized for Google rankings.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {[
+                          { id: 'home', label: 'Home Page (/)' },
+                          { id: 'service-webdev', label: 'Web Development Service Page (/services/web-development)' },
+                          { id: 'service-seo', label: 'Local SEO Service Page (/services/local-seo)' },
+                          { id: 'location-vasaiwest', label: 'Vasai West Location Landing Page (/locations/vasai-west)' },
+                          { id: 'location-vasaieast', label: 'Vasai East Location Landing Page (/locations/vasai-east)' },
+                        ].map(p => (
+                          <button key={p.id} onClick={() => setSelectedSubPage(p.id as any)} className={`w-full text-left p-3.5 rounded-xl text-xs font-bold border transition ${selectedSubPage === p.id ? 'bg-blue-600 text-white border-blue-500 shadow-lg' : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'}`}>
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {editorTab === 'content' && (
                     <div className="space-y-5 animate-in fade-in">
                       <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
@@ -319,8 +350,8 @@ export default function App() {
                       <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
                         <div>
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Industry Theme</label>
-                          <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
-                            <optgroup label="Premium Verticals">
+                          <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white">
+                            <optgroup label="Agency Themes">
                               {Object.values(AUSTRALIAN_THEMES).map(theme => (
                                 <option key={theme.id} value={theme.id}>{theme.name}</option>
                               ))}
@@ -329,7 +360,7 @@ export default function App() {
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Color Palette</label>
-                          <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
+                          <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white">
                             <option value="blue">Blue (Default)</option>
                             <option value="emerald">Emerald Green</option>
                             <option value="rose">Ruby Rose</option>
@@ -341,9 +372,9 @@ export default function App() {
                       </div>
 
                       <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Core Business Info</h4>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Agency Info</h4>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Name</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agency Name</label>
                           <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
@@ -352,89 +383,23 @@ export default function App() {
                             <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Email Address</label>
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="contact@business.com.au" />
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Support Email</label>
+                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
-                        <div>
-                          <input type="text" value={additionalLegalInfo} onChange={(e) => setAdditionalLegalInfo(e.target.value)} placeholder="ABN: 51 824 753 556" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                          <span className="text-[10px] text-slate-500 mt-1 block">Displayed in footer (e.g. ABN, GST, or company registration).</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">HQ Location Data</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
-                          <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                        </div>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Local Target Hub</h4>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Suburb</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Suburb</label>
                             <input type="text" value={suburb} onChange={(e) => setSuburb(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City Region</label>
                             <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                           </div>
-                        </div>
-                      </div>
-
-                      {/* ADDITIONAL LOCATIONS MANAGER */}
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Additional Locations</h4>
-                          <button onClick={() => setLocations([...locations, { id: Date.now().toString(), name: 'Branch Office', address: '456 Commercial Rd', phone: '+61 3 0000 0000', email: 'branch@business.com.au' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
-                            + Add Location
-                          </button>
-                        </div>
-                        {locations.map((loc, index) => (
-                          <div key={loc.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
-                            <button onClick={() => setLocations(locations.filter(l => l.id !== loc.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={loc.name} onChange={(e) => { const n = [...locations]; n[index].name = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Branch Name" />
-                            <input type="text" value={loc.address} onChange={(e) => { const n = [...locations]; n[index].address = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Street Address" />
-                            <div className="grid grid-cols-2 gap-2">
-                              <input type="text" value={loc.phone} onChange={(e) => { const n = [...locations]; n[index].phone = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Phone" />
-                              <input type="text" value={loc.email} onChange={(e) => { const n = [...locations]; n[index].email = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Email" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* HOURS OF OPERATION MANAGER */}
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Hours of Operation</h4>
-                          <button onClick={() => setOperatingHours([...operatingHours, { id: Date.now().toString(), days: 'Sunday', hours: 'Closed' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
-                            + Add Schedule
-                          </button>
-                        </div>
-                        {operatingHours.map((item, index) => (
-                          <div key={item.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex gap-2 items-center relative">
-                            <input type="text" value={item.days} onChange={(e) => { const n = [...operatingHours]; n[index].days = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-medium" placeholder="Days" />
-                            <input type="text" value={item.hours} onChange={(e) => { const n = [...operatingHours]; n[index].hours = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Hours" />
-                            <button onClick={() => setOperatingHours(operatingHours.filter(h => h.id !== item.id))} className="text-slate-500 hover:text-red-400 text-xs">✕</button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instagram URL</label>
-                          <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TikTok URL</label>
-                          <input type="text" value={socials.tiktok} onChange={(e) => setSocials({...socials, tiktok: e.target.value})} placeholder="https://tiktok.com/@..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook URL</label>
-                          <input type="text" value={socials.facebook} onChange={(e) => setSocials({...socials, facebook: e.target.value})} placeholder="https://facebook.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                         </div>
                       </div>
                     </div>
@@ -442,138 +407,19 @@ export default function App() {
 
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
-                      
-                      {/* HERO SECTION EDITS */}
                       <div className="space-y-4">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Hero Section</h3></div>
-                        <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline (e.g. THE FUTURE OF WEB PRESENCE)" />
-                        <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline (e.g. Lightning-Fast Websites...)" />
-                        <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline content..." />
-                        <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Engage Our Team)" />
+                        <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline" />
+                        <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline" />
+                        <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline" />
+                        <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text" />
                       </div>
 
-                      {/* ABOUT US EDITS */}
                       <div className="space-y-4 pt-4 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">About Us Section</h3></div>
-                        <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Us Title" />
-                        <textarea value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={4} placeholder="About Us description body..." />
-                        <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Get In Touch)" />
-                      </div>
-
-                      <div className="space-y-4 pt-4 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
-                        <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
-                        <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
-                        
-                        <div className="space-y-4 mt-4">
-                          {(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || []).map((service, index) => (
-                            <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => {
-                                const current = servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [];
-                                setServicesList(current.filter(s => s.id !== service.id));
-                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              
-                              <input type="text" value={service.title} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
-                                current[index].title = e.target.value; setServicesList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
-                              
-                              <textarea value={service.desc} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
-                                current[index].desc = e.target.value; setServicesList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
-                              
-                              <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                {service.image && <img src={service.image} className="w-10 h-10 object-cover rounded-md" />}
-                                <div className="flex-1">
-                                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Service Image</label>
-                                  <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
-                                    current[index].image = url; setServicesList(current);
-                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
-                                </div>
-                                {service.image && (
-                                  <button onClick={() => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
-                                    current[index].image = ''; setServicesList(current);
-                                  }} className="text-red-400 text-xs hover:underline">Delete</button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                          <button onClick={() => {
-                            const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
-                            current.push({ id: Date.now().toString(), title: 'New Service Item', desc: 'Detailed description here...', image: '' });
-                            setServicesList(current);
-                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Service Item</button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 pt-6 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
-                        <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        
-                        <div className="space-y-4 mt-4">
-                          {(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || []).map((proj, index) => (
-                            <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => {
-                                const current = projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [];
-                                setProjectsList(current.filter(p => p.id !== proj.id));
-                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              
-                              <input type="text" value={proj.subtitle} onChange={(e) => {
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
-                                current[index].subtitle = e.target.value; setProjectsList(current);
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle" />
-
-                              <input type="text" value={proj.title} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
-                                current[index].title = e.target.value; setProjectsList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
-                              
-                              <textarea value={proj.desc} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
-                                current[index].desc = e.target.value; setProjectsList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
-                              
-                              <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                {proj.image && <img src={proj.image} className="w-10 h-10 object-cover rounded-md" />}
-                                <div className="flex-1">
-                                  <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Project Image</label>
-                                  <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
-                                    current[index].image = url; setProjectsList(current);
-                                  })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
-                                </div>
-                                {proj.image && (
-                                  <button onClick={() => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
-                                    current[index].image = ''; setProjectsList(current);
-                                  }} className="text-red-400 text-xs hover:underline">Delete</button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                          <button onClick={() => {
-                            const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
-                            current.push({ id: Date.now().toString(), subtitle: 'New Location', title: 'New Project Showcase', desc: 'Project overview...', image: '' });
-                            setProjectsList(current);
-                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Project Item</button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 pt-6 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Frequently Asked Questions (FAQs)</h3></div>
-                        <div className="space-y-4 mt-4">
-                          {faqList.map((faq, index) => (
-                            <div key={faq.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => setFaqList(faqList.filter(f => f.id !== faq.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={faq.question} onChange={(e) => { const n = [...faqList]; n[index].question = e.target.value; setFaqList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Question" />
-                              <textarea value={faq.answer} onChange={(e) => { const n = [...faqList]; n[index].answer = e.target.value; setFaqList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Answer" />
-                            </div>
-                          ))}
-                          <button onClick={() => setFaqList([...faqList, { id: Date.now().toString(), question: 'New Question?', answer: 'Detailed answer...' }])} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add FAQ Item</button>
-                        </div>
+                        <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Title" />
+                        <textarea value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={4} placeholder="About Body" />
+                        <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text" />
                       </div>
                     </div>
                   )}
@@ -581,92 +427,22 @@ export default function App() {
                   {editorTab === 'media' && (
                     <div className="space-y-6 animate-in fade-in">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Site Logo Upload</label>
-                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden group">
-                          {siteLogo ? <img src={siteLogo} style={{ height: `${logoSize}px` }} className="object-contain mb-2 transition-all" /> : <span className="text-2xl">🖼️</span>}
-                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setSiteLogo)} className="text-xs text-slate-400 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
-                          {siteLogo && <button onClick={() => setSiteLogo(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Logo</button>}
+                        <label className="text-xs font-bold text-slate-400 uppercase">Agency Logo</label>
+                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50">
+                          {siteLogo ? <img src={siteLogo} style={{ height: `${logoSize}px` }} className="object-contain mb-2" /> : <span className="text-2xl">🖼️</span>}
+                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setSiteLogo)} className="text-xs text-slate-400" />
+                          {siteLogo && <button onClick={() => setSiteLogo(null)} className="text-red-400 text-xs mt-1">Delete</button>}
                         </div>
-                      </div>
-
-                      <div className="space-y-2 pt-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
-                          Logo Size (Height)
-                          <span className="text-blue-400">{logoSize}px</span>
-                        </label>
-                        <input type="range" min="20" max="150" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
-                        <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px (Max 150px)</span>
-                      </div>
-
-                      <div className="space-y-2 pt-4 border-t border-slate-800">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image Upload</label>
-                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden">
-                          {heroImage ? <img src={heroImage} className="h-24 w-full object-cover rounded-lg mb-2" /> : <span className="text-2xl">📸</span>}
-                          <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setHeroImage)} className="text-xs text-slate-400 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
-                          {heroImage && <button onClick={() => setHeroImage(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Hero Image</button>}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 pt-4 border-t border-slate-800">
-                        <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
-                          Hero Darkness (Transparency)
-                          <span className="text-blue-400">{heroOpacity}%</span>
-                        </label>
-                        <input type="range" min="0" max="100" value={heroOpacity} onChange={(e) => setHeroOpacity(Number(e.target.value))} className="w-full accent-blue-500" />
                       </div>
                     </div>
                   )}
 
                   {editorTab === 'layout' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules and floating action widgets.</p>
-                      
-                      <div className="space-y-3 border-b border-slate-800 pb-5 mb-2">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Floating Sticky Actions (Default Off)</h4>
-                        
-                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                          <span className="text-sm font-medium text-white">Call Us Now Button</span>
-                          <button onClick={() => setActiveSections({ ...activeSections, showCallButton: !activeSections.showCallButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showCallButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showCallButton ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                          <span className="text-sm font-medium text-white">Chat on WhatsApp Button</span>
-                          <button onClick={() => setActiveSections({ ...activeSections, showWhatsappButton: !activeSections.showWhatsappButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showWhatsappButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showWhatsappButton ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                          <span className="text-sm font-medium text-white">Virtual Assistant (AI Bot)</span>
-                          <button onClick={() => setActiveSections({ ...activeSections, showChatbotButton: !activeSections.showChatbotButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showChatbotButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showChatbotButton ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">SiteForge Branding in Chat</span>
-                          <span className="text-[10px] text-slate-400">Display "Powered by SiteForge" badge</span>
-                        </div>
-                        <button onClick={() => setShowSiteForgeBranding(!showSiteForgeBranding)} className={`w-10 h-6 rounded-full p-1 transition-colors ${showSiteForgeBranding ? 'bg-blue-500' : 'bg-slate-700'}`}>
-                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showSiteForgeBranding ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </button>
-                      </div>
-
                       {Object.entries({
-                        hero: 'Hero Section',
-                        about: 'About Section',
-                        services: 'Services (What We Do)',
-                        whyUs: 'Why Choose Us',
-                        projects: 'Recent Projects',
-                        reviews: 'Client Reviews',
-                        products: 'Online Store / Products',
-                        team: 'Our Executive Team',
-                        faq: 'FAQ Section',
-                        contact: 'Contact Footer'
+                        hero: 'Hero Section', about: 'About Section', services: 'Services', whyUs: 'Why Choose Us',
+                        projects: 'Recent Projects', reviews: 'Client Reviews', products: 'Agency Pricing / Packages',
+                        faq: 'FAQ Section', contact: 'Contact Footer'
                       }).map(([key, label]) => (
                         <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                           <span className="text-sm font-medium text-white">{label}</span>
@@ -680,73 +456,23 @@ export default function App() {
 
                   {editorTab === 'commerce' && (
                     <div className="space-y-4 animate-in fade-in">
-                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product / Package', desc: 'Product description goes here...', price: '199', image: '', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
-                        + Add Product / Package
+                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Service Package', desc: 'Package description...', price: '9999', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs">
+                        + Add Service Package
                       </button>
                       <div className="space-y-4 mt-4">
                         {products.map((product, index) => (
-                          <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                          <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                             <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            
-                            <div>
-                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Title</label>
-                              <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium mt-1" placeholder="Product Title" />
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Description</label>
-                              <textarea value={product.desc} onChange={(e) => { const n = [...products]; n[index].desc = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" rows={2} placeholder="Product description..." />
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] text-slate-400 uppercase font-bold">Price ($)</label>
-                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white mt-1" placeholder="99" />
-                            </div>
-
-                            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                              {product.image && <img src={product.image} className="w-12 h-12 object-cover rounded-md mb-2" />}
-                              <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Product Image</label>
-                              <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                const n = [...products]; n[index].image = url; setProducts(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
-                              {product.image && <button onClick={() => { const n = [...products]; n[index].image = ''; setProducts(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Image</button>}
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] text-slate-400 uppercase font-bold">PayPal / Stripe Checkout Link</label>
-                              <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" placeholder="https://paypal.me/..." />
-                            </div>
+                            <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-white font-bold" placeholder="Package Title" />
+                            <textarea value={product.desc} onChange={(e) => { const n = [...products]; n[index].desc = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-white" rows={2} placeholder="Description" />
+                            <input type="text" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-white" placeholder="Price (INR)" />
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {editorTab === 'team' && (
-                    <div className="space-y-4 animate-in fade-in">
-                      <button onClick={() => setTeamList([...teamList, { id: Date.now().toString(), name: 'Team Member Name', role: 'Executive Title', image: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
-                        + Add Team Member
-                      </button>
-                      <div className="space-y-4 mt-4">
-                        {teamList.map((member, index) => (
-                          <div key={member.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                            <button onClick={() => setTeamList(teamList.filter(t => t.id !== member.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={member.name} onChange={(e) => { const n = [...teamList]; n[index].name = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Full Name" />
-                            <input type="text" value={member.role} onChange={(e) => { const n = [...teamList]; n[index].role = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Job Title / Role" />
-                            
-                            <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                              {member.image && <img src={member.image} className="w-10 h-10 object-cover rounded-md mb-2" />}
-                              <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Team Member Photo</label>
-                              <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                const n = [...teamList]; n[index].image = url; setTeamList(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
-                              {member.image && <button onClick={() => { const n = [...teamList]; n[index].image = ''; setTeamList(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Photo</button>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {editorTab === 'team' && <div className="text-slate-400 text-xs">Team tab not required for agency layout.</div>}
 
                 </div>
               </div>
@@ -774,13 +500,13 @@ export default function App() {
                     <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                     <div className="mx-auto bg-white border border-slate-200 text-slate-400 text-xs px-4 py-1 rounded-md w-64 text-center truncate">
-                      {businessName.toLowerCase().replace(/\s+/g, '-')}.siteforge.com
+                      vasaiweb.in/{selectedSubPage === 'home' ? '' : selectedSubPage}
                     </div>
                   </div>
                 )}
 
                 <div className="relative">
-                  {/* MASTER ENGINE ROUTER WITH LOCATIONS & HOURS */}
+                  {/* MASTER ENGINE ROUTER WITH MULTI-PAGE SEO SUPPORT */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -791,7 +517,7 @@ export default function App() {
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList,
                       locations, operatingHours, showSiteForgeBranding,
-                      additionalLegalInfo
+                      additionalLegalInfo, selectedSubPage
                     };
 
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
