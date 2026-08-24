@@ -33,7 +33,7 @@ interface MasterTemplateProps {
 
 export default function MasterPremiumTemplate({ 
   config, businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-  logo, logoSize = 40, heroImage, heroOpacity, 
+  logo, logoSize = 40, heroImage, heroOpacity = 50, 
   heroTagline, heroHeadline, heroSubheadline, heroButtonText,
   aboutTitle, aboutBody, aboutButtonText,
   headers, servicesList, projectsList, reviewsList,
@@ -64,7 +64,9 @@ export default function MasterPremiumTemplate({
   const [mobileBlogsOpen, setMobileBlogsOpen] = useState(false);
 
   const displayHero = heroImage || config.defaultHeroImage || "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80";
-  const overlayOpacity = heroOpacity / 100; 
+  
+  // Real-time calculated transparency overlay value
+  const overlayOpacityValue = heroOpacity / 100; 
 
   const activeServices = servicesList.length > 0 ? servicesList : config.servicesDefault;
   const activeProjects = projectsList.length > 0 ? projectsList : config.projectsDefault;
@@ -383,11 +385,11 @@ export default function MasterPremiumTemplate({
         </div>
       ) : (
         <>
-          {/* HERO SECTION */}
+          {/* HERO SECTION WITH DYNAMIC TRANSPARENCY OVERLAY */}
           {activeSections.hero && (
             <section className="relative overflow-hidden min-h-[650px] flex items-center">
               <div className="absolute inset-0 bg-cover bg-center transition-all duration-500 z-0" style={{ backgroundImage: `url(${displayHero})` }}>
-                <div className="absolute inset-0 bg-slate-950 mix-blend-multiply opacity-50"></div>
+                <div className="absolute inset-0 bg-slate-950 transition-opacity duration-300" style={{ opacity: overlayOpacityValue }}></div>
               </div>
               <div className="relative z-10 px-8 py-20 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
                 <div className="flex flex-col gap-6">
@@ -700,11 +702,13 @@ export default function MasterPremiumTemplate({
             </div>
           )}
 
-          {/* Footer Bottom Bar with XML Sitemap Index Link & Built by SiteForge */}
+          {/* Footer Bottom Bar with Adaptive Theme Branding (White in Dark Mode, Slate-900 in Light Mode) */}
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
             <div>© {new Date().getFullYear()} {businessName}. All rights reserved.</div>
             <div className="flex items-center gap-6">
-              <span className="font-medium text-slate-400">Built by <strong className="text-slate-200">SiteForge</strong></span>
+              <span className="font-medium text-slate-500">
+                Built by <strong className={isDark ? 'text-white font-black' : 'text-slate-900 font-black'}>SiteForge</strong>
+              </span>
               <button onClick={() => { setCurrentRoute('sitemap'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-blue-400 transition font-bold flex items-center gap-1.5 focus:outline-none">
                 <FileText className="w-3.5 h-3.5" /> XML Sitemap Index
               </button>
