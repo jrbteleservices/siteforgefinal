@@ -225,7 +225,7 @@ export default function App() {
     }, 500);
   };
 
-  // --- PUBLISH HANDLER (OPENS IN NEW WINDOW) ---
+  // --- PUBLISH HANDLER (OPENS IN NEW WINDOW / TAB) ---
   const handlePublish = () => { 
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -242,8 +242,9 @@ export default function App() {
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
     const actualWorkingUrl = `${window.location.origin}?published=true`;
-    const newTab = window.open(actualWorkingUrl, '_blank');
-    if (!newTab) { window.location.href = actualWorkingUrl; }
+    
+    // Opens strictly in a brand new browser tab without disrupting builder state
+    window.open(actualWorkingUrl, '_blank');
 
     setIsPublishing(true); 
     setTimeout(() => { setIsPublishing(false); }, 800); 
