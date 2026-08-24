@@ -55,30 +55,35 @@ export default function App() {
   const [editorTab, setEditorTab] = useState<'content' | 'seo' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftSavedToast, setDraftSavedToast] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
+  // Load Saved Draft from LocalStorage if Available
+  const savedDraft = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteforge_builder_draft') || 'null') : null;
+
   // Core Business Info & Additional Legal Info
-  const [colorPalette, setColorPalette] = useState('blue');
-  const [streetAddress, setStreetAddress] = useState('123 Trade Avenue');
-  const [city, setCity] = useState('Melbourne');
-  const [email, setEmail] = useState('contact@apex.com.au');
-  const [additionalLegalInfo, setAdditionalLegalInfo] = useState('ABN: 51 824 753 556');
-  const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
-  const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
-  const [showFooterMenu, setShowFooterMenu] = useState<boolean>(true);
+  const [colorPalette, setColorPalette] = useState(savedDraft?.colorPalette || 'blue');
+  const [streetAddress, setStreetAddress] = useState(savedDraft?.streetAddress || '123 Trade Avenue');
+  const [city, setCity] = useState(savedDraft?.city || 'Melbourne');
+  const [email, setEmail] = useState(savedDraft?.email || 'contact@apex.com.au');
+  const [additionalLegalInfo, setAdditionalLegalInfo] = useState(savedDraft?.additionalLegalInfo || 'ABN: 51 824 753 556');
+  const [socials, setSocials] = useState(savedDraft?.socials || { facebook: '', instagram: '', tiktok: '' });
+  const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(savedDraft?.showSiteForgeBranding ?? true);
+  const [showFooterMenu, setShowFooterMenu] = useState<boolean>(savedDraft?.showFooterMenu ?? true);
 
   // Dynamic Hero and About Text Overrides (Including Buttons)
-  const [heroTagline, setHeroTagline] = useState('');
-  const [heroHeadline, setHeroHeadline] = useState('');
-  const [heroSubheadline, setHeroSubheadline] = useState('');
-  const [heroButtonText, setHeroButtonText] = useState('Engage Our Team');
+  const [heroTagline, setHeroTagline] = useState(savedDraft?.heroTagline || '');
+  const [heroHeadline, setHeroHeadline] = useState(savedDraft?.heroHeadline || '');
+  const [heroSubheadline, setHeroSubheadline] = useState(savedDraft?.heroSubheadline || '');
+  const [heroButtonText, setHeroButtonText] = useState(savedDraft?.heroButtonText || 'Engage Our Team');
   
-  const [aboutTitle, setAboutTitle] = useState('');
-  const [aboutBody, setAboutBody] = useState('');
-  const [aboutButtonText, setAboutButtonText] = useState('Get In Touch');
+  const [aboutTitle, setAboutTitle] = useState(savedDraft?.aboutTitle || '');
+  const [aboutBody, setAboutBody] = useState(savedDraft?.aboutBody || '');
+  const [aboutButtonText, setAboutButtonText] = useState(savedDraft?.aboutButtonText || 'Get In Touch');
 
   // --- BLOG ARTICLES STATE ---
-  const [seoArticles, setSeoArticles] = useState<SeoArticle[]>([
+  const [seoArticles, setSeoArticles] = useState<SeoArticle[]>(savedDraft?.seoArticles || [
     {
       id: '1',
       slug: 'blogs/high-performance-web-development',
@@ -92,21 +97,21 @@ export default function App() {
   const [selectedArticleId, setSelectedArticleId] = useState<string>('1');
 
   // Additional Locations & Operating Hours State
-  const [locations, setLocations] = useState<LocationItem[]>([]);
-  const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>([
+  const [locations, setLocations] = useState<LocationItem[]>(savedDraft?.locations || []);
+  const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>(savedDraft?.operatingHours || [
     { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
     { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
   ]);
 
   // Media & Logo Sizing Slider State
   const [isUploading, setIsUploading] = useState(false);
-  const [siteLogo, setSiteLogo] = useState<string | null>(null);
-  const [logoSize, setLogoSize] = useState<number>(40); 
-  const [heroImage, setHeroImage] = useState<string | null>(null);
-  const [heroOpacity, setHeroOpacity] = useState(85);
+  const [siteLogo, setSiteLogo] = useState<string | null>(savedDraft?.siteLogo || null);
+  const [logoSize, setLogoSize] = useState<number>(savedDraft?.logoSize || 40); 
+  const [heroImage, setHeroImage] = useState<string | null>(savedDraft?.heroImage || null);
+  const [heroOpacity, setHeroOpacity] = useState(savedDraft?.heroOpacity ?? 85);
 
   // Layout Section Toggles
-  const [activeSections, setActiveSections] = useState({
+  const [activeSections, setActiveSections] = useState(savedDraft?.activeSections || {
     hero: true,
     about: true,
     services: true,
@@ -123,33 +128,33 @@ export default function App() {
   });
 
   // Headers State
-  const [headers, setHeaders] = useState({
+  const [headers, setHeaders] = useState(savedDraft?.headers || {
     services: { sub: 'OUR CAPABILITIES', main: 'What We Do', desc: 'Comprehensive property and maintenance services.' },
     whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
     projects: { sub: 'PORTFOLIO', main: 'Recent Projects' },
     reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
 
-  const [whyUsHeader, setWhyUsHeader] = useState({ sub: 'REPUTATION & TRUST', main: 'Why Choose Us' });
-  const [whyUsItems, setWhyUsItems] = useState([
+  const [whyUsHeader, setWhyUsHeader] = useState(savedDraft?.whyUsHeader || { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' });
+  const [whyUsItems, setWhyUsItems] = useState(savedDraft?.whyUsItems || [
     { title: 'Fully Accredited', desc: 'Licensed, insured, and operating strictly to professional regulatory standards.' },
     { title: 'Excellence Awarded', desc: 'Recognized across commercial and residential sectors for elite craftsmanship.' }
   ]);
 
   // Fully Editable Arrays
-  const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
-  const [projectsList, setProjectsList] = useState<ProjectItem[]>([]);
-  const [reviewsList, setReviewsList] = useState<ReviewItem[]>([
+  const [servicesList, setServicesList] = useState<ServiceItem[]>(savedDraft?.servicesList || []);
+  const [projectsList, setProjectsList] = useState<ProjectItem[]>(savedDraft?.projectsList || []);
+  const [reviewsList, setReviewsList] = useState<ReviewItem[]>(savedDraft?.reviewsList || [
     { id: '1', name: 'Sarah Jenkins', rating: 5, text: 'Absolutely fantastic service. Arrived on time and fixed the issue perfectly. Highly recommended!' },
     { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
   ]);
-  const [products, setProducts] = useState<Product[]>([
+  const [products, setProducts] = useState<Product[]>(savedDraft?.products || [
     { id: '1', name: 'Standard Service Call', desc: 'Professional diagnostic inspection and preliminary repair.', price: '99', image: '', checkoutUrl: 'https://paypal.me/sample' }
   ]);
-  const [teamList, setTeamList] = useState<TeamMemberItem[]>([
+  const [teamList, setTeamList] = useState<TeamMemberItem[]>(savedDraft?.teamList || [
     { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: '' }
   ]);
-  const [faqList, setFaqList] = useState<FaqItem[]>([
+  const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || [
     { id: 'f1', question: 'What areas do you service?', answer: 'We service all metropolitan areas.' }
   ]);
 
@@ -159,10 +164,28 @@ export default function App() {
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
-  const [businessName, setBusinessName] = useState(activeProfile.businessName);
-  const [phone, setPhone] = useState(activeProfile.phone);
-  const [suburb, setSuburb] = useState(activeProfile.suburb);
-  const [selectedTheme, setSelectedTheme] = useState(activeProfile.theme);
+  const [businessName, setBusinessName] = useState(savedDraft?.businessName || activeProfile.businessName);
+  const [phone, setPhone] = useState(savedDraft?.phone || activeProfile.phone);
+  const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
+  const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || activeProfile.theme);
+
+  // --- AUTOMATIC AUTO-SAVE TO LOCALSTORAGE ---
+  useEffect(() => {
+    const currentState = {
+      businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+      siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+      aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
+      products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
+      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+    };
+    localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
+  }, [
+    businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+    siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+    aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
+    products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
+    showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+  ]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setCheckingAuth(false); });
@@ -184,6 +207,25 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
+  // --- MANUAL SAVE AS DRAFT HANDLER ---
+  const handleSaveDraft = () => {
+    setIsSavingDraft(true);
+    const currentState = {
+      businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
+      siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+      aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
+      products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
+      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+    };
+    localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
+    setTimeout(() => {
+      setIsSavingDraft(false);
+      setDraftSavedToast(true);
+      setTimeout(() => setDraftSavedToast(false), 3000);
+    }, 500);
+  };
+
+  // --- PUBLISH HANDLER (OPENS IN NEW WINDOW) ---
   const handlePublish = () => { 
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -201,15 +243,10 @@ export default function App() {
 
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     const newTab = window.open(actualWorkingUrl, '_blank');
-    
-    if (!newTab) {
-      window.location.href = actualWorkingUrl;
-    }
+    if (!newTab) { window.location.href = actualWorkingUrl; }
 
     setIsPublishing(true); 
-    setTimeout(() => { 
-      setIsPublishing(false); 
-    }, 800); 
+    setTimeout(() => { setIsPublishing(false); }, 800); 
   };
 
   if (isPublishedView) {
@@ -247,6 +284,13 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
       
+      {/* DRAFT SAVED TOAST */}
+      {draftSavedToast && (
+        <div className="absolute top-20 right-8 z-50 bg-emerald-600 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in">
+          <span>✓ Draft Saved Successfully!</span>
+        </div>
+      )}
+
       {/* DASHBOARD VIEW */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
@@ -331,6 +375,12 @@ export default function App() {
                 <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2">
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
+                
+                {/* --- SAVE AS DRAFT BUTTON --- */}
+                <button onClick={handleSaveDraft} disabled={isSavingDraft} className="px-4 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg shadow-sm transition flex items-center gap-1.5">
+                  <span>{isSavingDraft ? 'Saving...' : '💾 Save Draft'}</span>
+                </button>
+
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
                 <button onClick={handlePublish} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
                   {isPublishing ? 'Publishing...' : 'Publish Changes'}
