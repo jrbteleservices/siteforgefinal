@@ -217,7 +217,7 @@ export default function App() {
     }, 500);
   };
 
-  // --- PUBLISH HANDLER (OPENS IMMEDIATELY IN A NEW TAB) ---
+  // --- PUBLISH HANDLER (GUARANTEED NEW TAB FIX) ---
   const handlePublish = () => { 
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -231,12 +231,25 @@ export default function App() {
       additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
     };
     
+    // 1. Save data to storage
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
+    // 2. Generate URL
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     
-    // Opens directly in a new browser tab
-    window.open(actualWorkingUrl, '_blank');
+    // 3. Force browser to open a new tab using the injected anchor link method 
+    // (This reliably bypasses Chrome/Firefox popup blockers that ignore window.open)
+    const link = document.createElement('a');
+    link.href = actualWorkingUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // 4. Show success UI
+    setIsPublishing(true); 
+    setTimeout(() => { setIsPublishing(false); }, 800); 
   };
 
   if (isPublishedView) {
@@ -373,9 +386,9 @@ export default function App() {
 
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
                 
-                {/* --- FIXED PUBLISH BUTTON --- */}
-                <button onClick={handlePublish} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                  Publish Changes
+                {/* --- FIXED PUBLISH BUTTON WITH LOADING STATE RESTORED --- */}
+                <button onClick={handlePublish} disabled={isPublishing} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
+                  {isPublishing ? 'Publishing...' : 'Publish Changes'}
                 </button>
               </div>
             </header>
@@ -475,8 +488,9 @@ export default function App() {
                             </div>
 
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase">Blog Header Image URL</label>
-                              <input type="text" value={currentArt.headerImage || ''} onChange={(e) => updateCurrentArt('headerImage', e.target.value)} placeholder="https://images.unsplash.com/..." className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blog Header Image (URL or Upload)</label>
+                              <input type="text" value={currentArt.headerImage || ''} onChange={(e) => updateCurrentArt('headerImage', e.target.value)} placeholder="https://..." className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white mb-2" />
+                              <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => updateCurrentArt('headerImage', url))} className="text-xs text-slate-400 file:py-1 file:px-2 file:bg-blue-600 file:text-white cursor-pointer" />
                             </div>
 
                             <div>
@@ -939,7 +953,7 @@ export default function App() {
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Product Image</label>
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
                                 const n = [...products]; n[index].image = url; setProducts(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
                               {product.image && <button onClick={() => { const n = [...products]; n[index].image = ''; setProducts(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Image</button>}
                             </div>
 
@@ -970,7 +984,7 @@ export default function App() {
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Team Member Photo</label>
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
                                 const n = [...teamList]; n[index].image = url; setTeamList(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
                               {member.image && <button onClick={() => { const n = [...teamList]; n[index].image = ''; setTeamList(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Photo</button>}
                             </div>
                           </div>
