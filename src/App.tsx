@@ -35,14 +35,10 @@ interface SeoArticle { id: string; slug: string; title: string; subtitle: string
 export default function App() {
   // --- LIVE PUBLISHED VIEW CHECK ---
   const [isPublishedView] = useState(() => typeof window !== 'undefined' && window.location.search.includes('published=true'));
-  const [publishedData] = useState(() => {
-    try {
-      if (typeof window !== 'undefined' && window.location.search.includes('published=true')) {
-        return JSON.parse(localStorage.getItem('siteforge_published_state') || 'null');
-      }
-    } catch (e) { console.error(e); }
-    return null;
-  });
+  
+  // --- CLOUD CONFIG LOADER STATE ---
+  const [publishedData, setPublishedData] = useState<any>(null);
+  const [isLoadingSite, setIsLoadingSite] = useState(isPublishedView);
 
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -161,8 +157,36 @@ export default function App() {
   const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || activeProfile.theme);
 
+  // --- GLOBALLY FETCH SITE CONFIG ON LOAD (IF PUBLISHED) ---
+  useEffect(() => {
+    if (isPublishedView) {
+      const params = new URLSearchParams(window.location.search);
+      const configCloudUrl = params.get('config');
+
+      if (configCloudUrl) {
+        // Fetch from Supabase Cloud Config
+        fetch(configCloudUrl)
+          .then(res => res.json())
+          .then(data => {
+            setPublishedData(data);
+            setIsLoadingSite(false);
+          })
+          .catch(err => {
+            console.error("Cloud fetch failed, reverting to local cache.", err);
+            setPublishedData(JSON.parse(localStorage.getItem('siteforge_published_state') || 'null'));
+            setIsLoadingSite(false);
+          });
+      } else {
+        // Fallback to local machine storage if no cloud link exists
+        setPublishedData(JSON.parse(localStorage.getItem('siteforge_published_state') || 'null'));
+        setIsLoadingSite(false);
+      }
+    }
+  }, [isPublishedView]);
+
   // --- AUTOMATIC AUTO-SAVE TO LOCALSTORAGE ---
   useEffect(() => {
+    if (isPublishedView) return; // Don't auto-save while viewing the live site
     const currentState = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
@@ -176,7 +200,7 @@ export default function App() {
     siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
     aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
     products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
-    showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+    showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems, isPublishedView
   ]);
 
   useEffect(() => {
@@ -217,8 +241,10 @@ export default function App() {
     }, 500);
   };
 
-  // --- PUBLISH HANDLER (GUARANTEED NEW TAB FIX) ---
-  const handlePublish = () => { 
+  // --- CLOUD PUBLISH HANDLER (GUARANTEED GLOBAL SHARING) ---
+  const handlePublish = async () => { 
+    setIsPublishing(true);
+    
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
@@ -231,28 +257,51 @@ export default function App() {
       additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
     };
     
-    // 1. Save data to storage
+    // Save locally for quick dev fallback
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
-    // 2. Generate URL
-    const actualWorkingUrl = `${window.location.origin}?published=true`;
-    
-    // 3. Force browser to open a new tab using the injected anchor link method 
-    // (This reliably bypasses Chrome/Firefox popup blockers that ignore window.open)
-    const link = document.createElement('a');
-    link.href = actualWorkingUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Create a JSON payload of the entire site configuration
+      const sitePayload = JSON.stringify({ templateProps, selectedTheme });
+      const blob = new Blob([sitePayload], { type: 'application/json' });
+      const file = new File([blob], `config_${Date.now()}.json`, { type: 'application/json' });
+      
+      // Upload config to Supabase so it's globally accessible on any device
+      const configCloudUrl = await uploadImageToSupabase(file); 
 
-    // 4. Show success UI
-    setIsPublishing(true); 
-    setTimeout(() => { setIsPublishing(false); }, 800); 
+      let actualWorkingUrl = `${window.location.origin}?published=true`;
+      if (configCloudUrl) {
+        actualWorkingUrl += `&config=${encodeURIComponent(configCloudUrl)}`;
+      }
+
+      // Bypass popups by mimicking a user-driven anchor tag click
+      const link = document.createElement('a');
+      link.href = actualWorkingUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error("Publishing failed:", e);
+      alert("An error occurred while generating the global site link.");
+    }
+
+    setIsPublishing(false); 
   };
 
   if (isPublishedView) {
+    if (isLoadingSite) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-white font-bold uppercase tracking-widest text-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            Loading Site Experience...
+          </div>
+        </div>
+      );
+    }
+
     const dataToRender = publishedData ? publishedData.templateProps : {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
@@ -379,16 +428,14 @@ export default function App() {
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
                 
-                {/* --- SAVE AS DRAFT BUTTON --- */}
                 <button onClick={handleSaveDraft} disabled={isSavingDraft} className="px-4 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg shadow-sm transition flex items-center gap-1.5">
                   <span>{isSavingDraft ? 'Saving...' : '💾 Save Draft'}</span>
                 </button>
 
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
                 
-                {/* --- FIXED PUBLISH BUTTON WITH LOADING STATE RESTORED --- */}
                 <button onClick={handlePublish} disabled={isPublishing} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                  {isPublishing ? 'Publishing...' : 'Publish Changes'}
+                  {isPublishing ? 'Uploading Configuration...' : 'Publish Changes'}
                 </button>
               </div>
             </header>
