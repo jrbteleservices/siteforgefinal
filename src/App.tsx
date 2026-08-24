@@ -235,7 +235,7 @@ export default function App() {
 
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     
-    // Opens directly on user click to bypass Chrome popup blockers
+    // Opens directly in a new browser tab
     window.open(actualWorkingUrl, '_blank');
   };
 
@@ -372,6 +372,8 @@ export default function App() {
                 </button>
 
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
+                
+                {/* --- FIXED PUBLISH BUTTON --- */}
                 <button onClick={handlePublish} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
                   Publish Changes
                 </button>
