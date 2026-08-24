@@ -1,7 +1,7 @@
 // src/components/themes/MasterPremiumTemplate.tsx
 
 import { useState } from 'react';
-import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown, Home, User, Briefcase, Mail as MailIcon, Menu, FileText } from 'lucide-react';
+import { Phone, MessageCircle, CheckCircle, MapPin, Mail, Star, ArrowRight, Activity, ShieldCheck, Award, Users, ExternalLink, Clock, Send, X, Bot, ChevronDown, Home, User, Briefcase, Mail as MailIcon, Menu, FileText, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { IndustryConfig, ServiceItem, ProjectItem, ProductItem, TeamMemberItem } from '../../constants/industryConfigs';
 
@@ -9,7 +9,7 @@ interface ReviewItem { id: string; name: string; rating: number; text: string; i
 interface FaqItem { id: string; question: string; answer: string; }
 interface LocationItem { id: string; name: string; address: string; phone: string; email: string; }
 interface OperatingHourItem { id: string; days: string; hours: string; }
-interface SeoArticle { id: string; slug: string; title: string; subtitle: string; body: string; metaDescription: string; }
+interface SeoArticle { id: string; slug: string; title: string; subtitle: string; body: string; metaDescription: string; headerImage?: string; }
 
 interface MasterTemplateProps {
   config: IndustryConfig;
@@ -17,7 +17,6 @@ interface MasterTemplateProps {
   socials: { facebook: string; instagram: string; tiktok: string; };
   colorPalette: string; logo?: string | null; logoSize?: number; heroImage?: string | null; heroOpacity: number;
   
-  // Custom Overrides
   heroTagline?: string; heroHeadline?: string; heroSubheadline?: string; heroButtonText?: string;
   aboutTitle?: string; aboutBody?: string; aboutButtonText?: string;
 
@@ -27,6 +26,9 @@ interface MasterTemplateProps {
   showSiteForgeBranding?: boolean;
   additionalLegalInfo?: string;
   seoArticles?: SeoArticle[];
+  showFooterMenu?: boolean;
+  whyUsHeader?: { sub: string; main: string; desc?: string };
+  whyUsItems?: Array<{ title: string; desc: string }>;
 }
 
 export default function MasterPremiumTemplate({ 
@@ -36,7 +38,8 @@ export default function MasterPremiumTemplate({
   aboutTitle, aboutBody, aboutButtonText,
   headers, servicesList, projectsList, reviewsList,
   showProducts, products, activeSections, themeMode, teamList = [], faqList = [], locations = [], operatingHours = [],
-  showSiteForgeBranding = true, additionalLegalInfo = '', seoArticles = []
+  showSiteForgeBranding = true, additionalLegalInfo = '', seoArticles = [], showFooterMenu = true,
+  whyUsHeader = { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' }, whyUsItems = []
 }: MasterTemplateProps) {
   
   const [leadName, setLeadName] = useState('');
@@ -67,6 +70,7 @@ export default function MasterPremiumTemplate({
   const activeProjects = projectsList.length > 0 ? projectsList : config.projectsDefault;
   const activeProducts = products.length > 0 ? products : config.productsDefault;
   const activeTeam = teamList.length > 0 ? teamList : config.teamDefault;
+  const activeReviews = reviewsList;
 
   const defaultFaqs: FaqItem[] = [
     { id: 'f1', question: `What areas do you service across ${city}?`, answer: `We provide direct coverage across metropolitan ${city}, ${suburb}, and surrounding regional hubs.` },
@@ -88,22 +92,18 @@ export default function MasterPremiumTemplate({
       let botReply = '';
       const lower = userText.toLowerCase();
 
-      const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package') || lower.includes('how much'));
-      if (matchedProduct && (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes(matchedProduct.name.toLowerCase()))) {
-        botReply = `The price for "${matchedProduct.name}" is $${matchedProduct.price}. ${matchedProduct.desc ? matchedProduct.desc : ''} Would you like me to arrange a callback?`;
-      } 
-      else if (lower.includes('service') || lower.includes('offer') || lower.includes('what do you do')) {
+      const matchedProduct = activeProducts.find(p => lower.includes(p.name.toLowerCase()) || lower.includes('price') || lower.includes('cost') || lower.includes('package'));
+      if (matchedProduct) {
+        botReply = `The price for "${matchedProduct.name}" is ₹${matchedProduct.price}. ${matchedProduct.desc || ''} Would you like me to arrange a callback?`;
+      } else if (lower.includes('service') || lower.includes('offer')) {
         const serviceTitles = activeServices.map(s => s.title).join(', ');
         botReply = `We specialize in: ${serviceTitles}.`;
-      } 
-      else if (lower.includes('hour') || lower.includes('open') || lower.includes('time')) {
-        botReply = operatingHours.length > 0 ? operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ') : 'We operate Monday through Saturday with standard business hours.';
-      } 
-      else if (lower.includes('location') || lower.includes('address') || lower.includes('where')) {
+      } else if (lower.includes('hour') || lower.includes('open') || lower.includes('time')) {
+        botReply = operatingHours.length > 0 ? operatingHours.map(oh => `${oh.days}: ${oh.hours}`).join(' | ') : 'We operate Monday through Saturday.';
+      } else if (lower.includes('location') || lower.includes('address')) {
         botReply = `Our primary office is located at ${streetAddress}, ${suburb}, ${city}.`;
-      } 
-      else {
-        botReply = `I'd love to make sure you get the exact answer! What is your name and phone number so our team can contact you?`;
+      } else {
+        botReply = `Please call us directly at ${phone} or leave your details in our contact form below so we can assist you right away!`;
       }
 
       setChatMessages([...updatedMessages, { sender: 'bot', text: botReply }]);
@@ -119,7 +119,7 @@ export default function MasterPremiumTemplate({
     const { error } = await supabase.from('leads').insert([{
         owner_id: '00000000-0000-0000-0000-000000000000',
         name: leadName, email: leadEmail || 'no-email@provided.com', phone: leadPhone,
-        message: `[${config.name} Inquiry - ${suburb}] ${leadMessage}`
+        message: `[${config.name} Inquiry - Route: ${currentRoute}] ${leadMessage}`
     }]);
     setLoading(false);
     if (error) alert('Error submitting inquiry: ' + error.message); else setSubmitted(true);
@@ -144,8 +144,6 @@ export default function MasterPremiumTemplate({
   };
   const c = themeColors[colorPalette] || themeColors.blue;
 
-  const hasMoreItems = activeSections.whyUs || activeSections.projects || activeSections.reviews || (showProducts && activeSections.products) || activeSections.team || activeSections.faq || seoArticles.length > 0;
-
   return (
     <div id="hero" className={`${bgMain} ${textMain} min-h-screen font-sans transition-colors duration-300 relative pb-20 md:pb-0`}>
       
@@ -169,7 +167,6 @@ export default function MasterPremiumTemplate({
       {/* FLOATING ACTION WIDGETS STACK */}
       {(activeSections.showCallButton || activeSections.showWhatsappButton || activeSections.showChatbotButton) && (
         <div className="fixed bottom-20 md:bottom-6 right-6 z-40 flex flex-col gap-2.5 items-end">
-          
           {chatOpen && activeSections.showChatbotButton && (
             <div className="w-[340px] h-[420px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
               <div className="p-3.5 bg-blue-600 text-white flex justify-between items-center shadow-md">
@@ -239,7 +236,7 @@ export default function MasterPremiumTemplate({
         </div>
       )}
 
-      {/* STICKY HEADER */}
+      {/* STICKY HEADER - Uppercase HOME */}
       <header className={`sticky top-0 z-50 ${bgHeader} backdrop-blur-md border-b ${borderMuted} px-8 py-4 flex justify-between items-center shadow-md`}>
         <button onClick={() => { setCurrentRoute('home'); setActiveArticle(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center gap-3 cursor-pointer group focus:outline-none">
           {logo ? (
@@ -253,7 +250,7 @@ export default function MasterPremiumTemplate({
         </button>
         
         <nav className={`hidden md:flex items-center gap-8 text-xs font-bold ${textMuted} uppercase tracking-wider relative`}>
-          <button onClick={() => { setCurrentRoute('home'); setActiveArticle(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:${c.text} transition ${currentRoute === 'home' && !activeArticle ? c.text : ''}`}>Home</button>
+          <button onClick={() => { setCurrentRoute('home'); setActiveArticle(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`hover:${c.text} transition ${currentRoute === 'home' && !activeArticle ? c.text : ''}`}>HOME</button>
           <a href="#about" onClick={() => { setCurrentRoute('home'); setActiveArticle(null); }} className={`hover:${c.text} transition`}>About</a>
           {activeSections.services && <a href="#services" onClick={() => { setCurrentRoute('home'); setActiveArticle(null); }} className={`hover:${c.text} transition`}>Services</a>}
           <a href="#contact" onClick={() => { setCurrentRoute('home'); setActiveArticle(null); }} className={`hover:${c.text} transition`}>Contact</a>
@@ -287,7 +284,7 @@ export default function MasterPremiumTemplate({
       {/* MOBILE-ONLY STICKY BOTTOM NAVIGATION BAR */}
       <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${bgHeader} backdrop-blur-md border-t ${borderMuted} px-3 py-2 flex justify-around items-center shadow-2xl`}>
         <button onClick={() => { setCurrentRoute('home'); setActiveArticle(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
-          <Home className="w-4 h-4" /><span>Home</span>
+          <Home className="w-4 h-4" /><span>HOME</span>
         </button>
         <a href="#about" onClick={() => { setCurrentRoute('home'); setActiveArticle(null); }} className={`flex flex-col items-center gap-1 text-[9px] font-bold uppercase tracking-wider ${textMuted} hover:${c.text} transition`}>
           <User className="w-4 h-4" /><span>About</span>
@@ -348,14 +345,41 @@ export default function MasterPremiumTemplate({
           </pre>
         </div>
       ) : activeArticle ? (
-        <div className="py-24 px-8 max-w-4xl mx-auto space-y-8 animate-in fade-in">
+        <div className="py-24 px-8 max-w-3xl mx-auto space-y-8 animate-in fade-in">
+          <button onClick={() => { setActiveArticle(null); setCurrentRoute('home'); }} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1.5">
+            <ArrowLeft className="w-4 h-4" /> Return to Homepage
+          </button>
+          
           <span className={`text-xs font-bold ${c.text} uppercase tracking-widest font-mono`}>/{activeArticle.slug}</span>
-          <h1 className="text-5xl font-black tracking-tight leading-tight">{activeArticle.title}</h1>
-          <h2 className="text-xl text-slate-400 font-medium">{activeArticle.subtitle}</h2>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight">{activeArticle.title}</h1>
+          <p className="text-xl text-slate-500 font-medium">{activeArticle.subtitle}</p>
+
+          {activeArticle.headerImage && (
+            <div className="w-full h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200">
+              <img src={activeArticle.headerImage} alt={activeArticle.title} className="w-full h-full object-cover" />
+            </div>
+          )}
+
           <div className={`${bgCard} border ${borderMuted} p-10 rounded-3xl space-y-6 text-base leading-relaxed`}>
             <p className="whitespace-pre-line">{activeArticle.body}</p>
           </div>
-          <button onClick={() => { setActiveArticle(null); setCurrentRoute('home'); }} className="text-xs font-bold text-blue-400 hover:underline">&larr; Return to Homepage</button>
+
+          <div className="pt-8 border-t border-slate-200 flex justify-between items-center">
+            <button onClick={() => { setActiveArticle(null); setCurrentRoute('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="bg-slate-900 text-white font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider">
+              &larr; Back to Home
+            </button>
+            {seoArticles.length > 1 && (
+              <button onClick={() => {
+                const currentIndex = seoArticles.findIndex(a => a.id === activeArticle.id);
+                const nextArticle = seoArticles[(currentIndex + 1) % seoArticles.length];
+                setActiveArticle(nextArticle);
+                setCurrentRoute(nextArticle.slug);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }} className={`${c.bg} text-white font-bold px-6 py-3 rounded-xl text-xs uppercase tracking-wider`}>
+                Read Next Article &rarr;
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <>
@@ -437,29 +461,21 @@ export default function MasterPremiumTemplate({
             </section>
           )}
 
-          {/* WHY US SECTION */}
+          {/* FULLY EDITABLE WHY CHOSEN SECTION */}
           {activeSections.whyUs && (
             <section id="whyUs" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
               <div className="text-center max-w-2xl mx-auto mb-16">
-                <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>{headers?.whyUs?.sub || 'REPUTATION & TRUST'}</h2>
-                <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>{headers?.whyUs?.main || 'Why Choose Us'}</h3>
+                <h2 className={`text-xs font-bold ${c.text} uppercase tracking-widest mb-3`}>{whyUsHeader.sub}</h2>
+                <h3 className={`text-4xl font-black ${textMain} tracking-tight`}>{whyUsHeader.main}</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className={`${bgCard} border ${borderMuted} p-8 rounded-2xl shadow-sm flex flex-col gap-4`}>
-                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><ShieldCheck className="w-6 h-6" /></div>
-                  <h4 className={`text-xl font-bold ${textMain}`}>Fully Accredited</h4>
-                  <p className={`${textMuted} text-sm leading-relaxed`}>Licensed, insured, and operating strictly to professional regulatory standards.</p>
-                </div>
-                <div className={`${bgCard} border ${borderMuted} p-8 rounded-2xl shadow-sm flex flex-col gap-4`}>
-                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Award className="w-6 h-6" /></div>
-                  <h4 className={`text-xl font-bold ${textMain}`}>Excellence Awarded</h4>
-                  <p className={`${textMuted} text-sm leading-relaxed`}>Recognized across commercial and residential sectors for elite craftsmanship.</p>
-                </div>
-                <div className={`${bgCard} border ${borderMuted} p-8 rounded-2xl shadow-sm flex flex-col gap-4`}>
-                  <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><Users className="w-6 h-6" /></div>
-                  <h4 className={`text-xl font-bold ${textMain}`}>Dedicated Partners</h4>
-                  <p className={`${textMuted} text-sm leading-relaxed`}>Direct principal involvement from conception through to final project delivery.</p>
-                </div>
+                {whyUsItems.map((item, idx) => (
+                  <div key={idx} className={`${bgCard} border ${borderMuted} p-8 rounded-2xl shadow-sm flex flex-col gap-4`}>
+                    <div className={`w-12 h-12 rounded-xl ${c.lightBg} flex items-center justify-center ${c.text}`}><ShieldCheck className="w-6 h-6" /></div>
+                    <h4 className={`text-xl font-bold ${textMain}`}>{item.title}</h4>
+                    <p className={`${textMuted} text-sm leading-relaxed`}>{item.desc}</p>
+                  </div>
+                ))}
               </div>
             </section>
           )}
@@ -494,7 +510,7 @@ export default function MasterPremiumTemplate({
             </section>
           )}
 
-          {/* REVIEWS SECTION */}
+          {/* FULLY EDITABLE REVIEWS SECTION */}
           {activeSections.reviews && (
             <section id="reviews" className={`py-24 px-8 max-w-7xl mx-auto border-t ${borderMuted}`}>
               <div className="text-center max-w-2xl mx-auto mb-16">
@@ -536,7 +552,7 @@ export default function MasterPremiumTemplate({
                       <div>
                         <h4 className={`text-xl font-bold ${textMain}`}>{prod.name}</h4>
                         {prod.desc && <p className={`${textMuted} text-xs mt-2 leading-relaxed`}>{prod.desc}</p>}
-                        <div className={`text-3xl font-black ${c.text} mt-4`}>${prod.price}</div>
+                        <div className={`text-3xl font-black ${c.text} mt-4`}>₹{prod.price}</div>
                       </div>
                       <a href={prod.checkoutUrl || '#contact'} target={prod.checkoutUrl ? "_blank" : "_self"} rel="noreferrer" className={`w-full text-center ${c.bg} ${c.hover} text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md`}>
                         <span>Secure Checkout</span>
@@ -662,10 +678,33 @@ export default function MasterPremiumTemplate({
             </div>
           </div>
 
-          {/* Footer Bottom Bar with XML Sitemap Index Link */}
+          {/* OPTIONAL FOOTER MENU */}
+          {showFooterMenu && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-8 border-t border-slate-800 text-xs">
+              <div className="space-y-3">
+                <h4 className="font-bold uppercase tracking-wider">Quick Links</h4>
+                <div className="flex flex-col gap-2 text-slate-400">
+                  <button onClick={() => { setCurrentRoute('home'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-left hover:text-blue-400">HOME</button>
+                  <a href="#about" className="hover:text-blue-400">About Us</a>
+                  <a href="#services" className="hover:text-blue-400">Services</a>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h4 className="font-bold uppercase tracking-wider">Blogs & SEO</h4>
+                <div className="flex flex-col gap-2 text-slate-400">
+                  {seoArticles.map(art => (
+                    <button key={art.id} onClick={() => { setActiveArticle(art); setCurrentRoute(art.slug); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-left hover:text-blue-400 truncate">{art.title}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer Bottom Bar with XML Sitemap Index Link & Built by SiteForge */}
           <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
             <div>© {new Date().getFullYear()} {businessName}. All rights reserved.</div>
             <div className="flex items-center gap-6">
+              <span className="font-medium text-slate-400">Built by <strong className="text-slate-200">SiteForge</strong></span>
               <button onClick={() => { setCurrentRoute('sitemap'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-blue-400 transition font-bold flex items-center gap-1.5 focus:outline-none">
                 <FileText className="w-3.5 h-3.5" /> XML Sitemap Index
               </button>

@@ -30,7 +30,7 @@ interface TeamMemberItem { id: string; name: string; role: string; image?: strin
 interface FaqItem { id: string; question: string; answer: string; }
 interface LocationItem { id: string; name: string; address: string; phone: string; email: string; }
 interface OperatingHourItem { id: string; days: string; hours: string; }
-interface SeoArticle { id: string; slug: string; title: string; subtitle: string; body: string; metaDescription: string; }
+interface SeoArticle { id: string; slug: string; title: string; subtitle: string; body: string; metaDescription: string; headerImage?: string; }
 
 export default function App() {
   // --- LIVE PUBLISHED VIEW CHECK ---
@@ -65,8 +65,9 @@ export default function App() {
   const [additionalLegalInfo, setAdditionalLegalInfo] = useState('ABN: 51 824 753 556');
   const [socials, setSocials] = useState({ facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(true);
+  const [showFooterMenu, setShowFooterMenu] = useState<boolean>(true);
 
-  // NEW: Dynamic Hero and About Text Overrides (Including Buttons)
+  // Dynamic Hero and About Text Overrides (Including Buttons)
   const [heroTagline, setHeroTagline] = useState('');
   const [heroHeadline, setHeroHeadline] = useState('');
   const [heroSubheadline, setHeroSubheadline] = useState('');
@@ -84,7 +85,8 @@ export default function App() {
       title: 'High-Performance Web Development Guide',
       subtitle: 'Engineered for speed, conversion, and top-tier Google rankings.',
       body: 'Standard WordPress and Wix sites are bloated, slow, and lose valuable customers. We build lightning-fast web infrastructure tailored for local and global businesses.',
-      metaDescription: 'Professional web development guide engineered for high speed, elite conversion, and organic SEO performance.'
+      metaDescription: 'Professional web development guide engineered for high speed, elite conversion, and organic SEO performance.',
+      headerImage: ''
     }
   ]);
   const [selectedArticleId, setSelectedArticleId] = useState<string>('1');
@@ -108,9 +110,9 @@ export default function App() {
     hero: true,
     about: true,
     services: true,
-    whyUs: false,
+    whyUs: true,
     projects: false,
-    reviews: false,
+    reviews: true,
     products: false,
     team: false,
     faq: false,
@@ -127,6 +129,12 @@ export default function App() {
     projects: { sub: 'PORTFOLIO', main: 'Recent Projects' },
     reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
+
+  const [whyUsHeader, setWhyUsHeader] = useState({ sub: 'REPUTATION & TRUST', main: 'Why Choose Us' });
+  const [whyUsItems, setWhyUsItems] = useState([
+    { title: 'Fully Accredited', desc: 'Licensed, insured, and operating strictly to professional regulatory standards.' },
+    { title: 'Excellence Awarded', desc: 'Recognized across commercial and residential sectors for elite craftsmanship.' }
+  ]);
 
   // Fully Editable Arrays
   const [servicesList, setServicesList] = useState<ServiceItem[]>([]);
@@ -186,7 +194,7 @@ export default function App() {
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo, seoArticles
+      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
     };
     
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
@@ -214,7 +222,7 @@ export default function App() {
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo, seoArticles
+      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
     };
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
@@ -372,7 +380,8 @@ export default function App() {
                             title: 'New Blog Post Title',
                             subtitle: 'Sub-heading for search engine ranking',
                             body: 'Write your full blog post content here...',
-                            metaDescription: 'Meta description for Google search results.'
+                            metaDescription: 'Meta description for Google search results.',
+                            headerImage: ''
                           };
                           setSeoArticles([...seoArticles, newArt]);
                           setSelectedArticleId(newArt.id);
@@ -421,6 +430,11 @@ export default function App() {
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">Subtitle (H2)</label>
                               <input type="text" value={currentArt.subtitle} onChange={(e) => updateCurrentArt('subtitle', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Blog Header Image URL</label>
+                              <input type="text" value={currentArt.headerImage || ''} onChange={(e) => updateCurrentArt('headerImage', e.target.value)} placeholder="https://images.unsplash.com/..." className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                             </div>
 
                             <div>
@@ -586,7 +600,49 @@ export default function App() {
                         <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Get In Touch)" />
                       </div>
 
+                      {/* WHY CHOOSE US EDITORIAL CONTROLS */}
                       <div className="space-y-4 pt-4 border-t border-slate-800">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Why Choose Us Section</h3></div>
+                        <input type="text" value={whyUsHeader.main} onChange={(e) => setWhyUsHeader({ ...whyUsHeader, main: e.target.value })} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Section Main Title" />
+                        
+                        <div className="space-y-3 mt-3">
+                          {whyUsItems.map((item, idx) => (
+                            <div key={idx} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
+                              <input type="text" value={item.title} onChange={(e) => { const n = [...whyUsItems]; n[idx].title = e.target.value; setWhyUsItems(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" />
+                              <textarea value={item.desc} onChange={(e) => { const n = [...whyUsItems]; n[idx].desc = e.target.value; setWhyUsItems(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" rows={2} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* CLIENT REVIEWS EDITORIAL CONTROLS */}
+                      <div className="space-y-4 pt-4 border-t border-slate-800">
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Client Reviews Manager</h3></div>
+                        <div className="space-y-4">
+                          {reviewsList.map((rev, idx) => (
+                            <div key={rev.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                              <button onClick={() => setReviewsList(reviewsList.filter(r => r.id !== rev.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                              <input type="text" value={rev.name} onChange={(e) => { const n = [...reviewsList]; n[idx].name = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Reviewer Name" />
+                              
+                              <div>
+                                <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Star Rating (1 to 5)</label>
+                                <select value={rev.rating} onChange={(e) => { const n = [...reviewsList]; n[idx].rating = Number(e.target.value); setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white">
+                                  <option value={1}>⭐ 1 Star</option>
+                                  <option value={2}>⭐⭐ 2 Stars</option>
+                                  <option value={3}>⭐⭐⭐ 3 Stars</option>
+                                  <option value={4}>⭐⭐⭐⭐ 4 Stars</option>
+                                  <option value={5}>⭐⭐⭐⭐⭐ 5 Stars</option>
+                                </select>
+                              </div>
+
+                              <textarea value={rev.text} onChange={(e) => { const n = [...reviewsList]; n[idx].text = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" rows={2} placeholder="Review text..." />
+                            </div>
+                          ))}
+                          <button onClick={() => setReviewsList([...reviewsList, { id: Date.now().toString(), name: 'New Client', rating: 5, text: 'Fantastic service!' }])} className="w-full py-2 border border-dashed border-blue-500 text-blue-400 font-bold text-xs rounded-xl">+ Add Review</button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 pt-6 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
@@ -747,6 +803,13 @@ export default function App() {
                     <div className="space-y-4 animate-in fade-in">
                       <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules and floating action widgets.</p>
                       
+                      <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <span className="text-sm font-bold text-white">Show Footer Menu (Quick Links)</span>
+                        <button onClick={() => setShowFooterMenu(!showFooterMenu)} className={`w-10 h-6 rounded-full p-1 transition-colors ${showFooterMenu ? 'bg-blue-500' : 'bg-slate-700'}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showFooterMenu ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
+
                       <div className="space-y-3 border-b border-slate-800 pb-5 mb-2">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Floating Sticky Actions (Default Off)</h4>
                         
@@ -917,7 +980,7 @@ export default function App() {
                       showProducts: activeSections.products, 
                       products, activeSections, themeMode, teamList, faqList,
                       locations, operatingHours, showSiteForgeBranding,
-                      additionalLegalInfo, seoArticles
+                      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
                     };
 
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
