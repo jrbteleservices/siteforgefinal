@@ -64,10 +64,10 @@ export default function App() {
 
   // Core Business Info & Additional Legal Info
   const [colorPalette, setColorPalette] = useState(savedDraft?.colorPalette || 'blue');
-  const [streetAddress, setStreetAddress] = useState(savedDraft?.streetAddress || '123 Trade Avenue');
-  const [city, setCity] = useState(savedDraft?.city || 'Melbourne');
-  const [email, setEmail] = useState(savedDraft?.email || 'contact@apex.com.au');
-  const [additionalLegalInfo, setAdditionalLegalInfo] = useState(savedDraft?.additionalLegalInfo || 'ABN: 51 824 753 556');
+  const [streetAddress, setStreetAddress] = useState(savedDraft?.streetAddress || 'Station Road, Vasai West');
+  const [city, setCity] = useState(savedDraft?.city || 'Vasai-Virar');
+  const [email, setEmail] = useState(savedDraft?.email || 'contact@vasaiweb.in');
+  const [additionalLegalInfo, setAdditionalLegalInfo] = useState(savedDraft?.additionalLegalInfo || 'JRB Tele Services Pvt Ltd');
   const [socials, setSocials] = useState(savedDraft?.socials || { facebook: '', instagram: '', tiktok: '' });
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(savedDraft?.showSiteForgeBranding ?? true);
   const [showFooterMenu, setShowFooterMenu] = useState<boolean>(savedDraft?.showFooterMenu ?? true);
@@ -76,11 +76,11 @@ export default function App() {
   const [heroTagline, setHeroTagline] = useState(savedDraft?.heroTagline || '');
   const [heroHeadline, setHeroHeadline] = useState(savedDraft?.heroHeadline || '');
   const [heroSubheadline, setHeroSubheadline] = useState(savedDraft?.heroSubheadline || '');
-  const [heroButtonText, setHeroButtonText] = useState(savedDraft?.heroButtonText || 'Engage Our Team');
+  const [heroButtonText, setHeroButtonText] = useState(savedDraft?.heroButtonText || 'Schedule Strategy Call');
   
   const [aboutTitle, setAboutTitle] = useState(savedDraft?.aboutTitle || '');
   const [aboutBody, setAboutBody] = useState(savedDraft?.aboutBody || '');
-  const [aboutButtonText, setAboutButtonText] = useState(savedDraft?.aboutButtonText || 'Get In Touch');
+  const [aboutButtonText, setAboutButtonText] = useState(savedDraft?.aboutButtonText || 'Explore Our Services');
 
   // --- BLOG ARTICLES STATE ---
   const [seoArticles, setSeoArticles] = useState<SeoArticle[]>(savedDraft?.seoArticles || [
@@ -99,8 +99,7 @@ export default function App() {
   // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>(savedDraft?.locations || []);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>(savedDraft?.operatingHours || [
-    { id: '1', days: 'Monday – Friday', hours: '8:00 AM – 6:00 PM' },
-    { id: '2', days: 'Saturday', hours: '9:00 AM – 2:00 PM' }
+    { id: '1', days: 'Monday – Saturday', hours: '4:30 AM – 1:30 PM IST' }
   ]);
 
   // Media & Logo Sizing Slider State
@@ -129,9 +128,9 @@ export default function App() {
 
   // Headers State
   const [headers, setHeaders] = useState(savedDraft?.headers || {
-    services: { sub: 'OUR CAPABILITIES', main: 'What We Do', desc: 'Comprehensive property and maintenance services.' },
+    services: { sub: 'OUR EXPERTISE', main: 'Engineered for Market Domination', desc: 'Comprehensive digital solutions.' },
     whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
-    projects: { sub: 'PORTFOLIO', main: 'Recent Projects' },
+    projects: { sub: 'PORTFOLIO', main: 'Client Success Stories' },
     reviews: { sub: 'TESTIMONIALS', main: 'Client Reviews' }
   });
 
@@ -145,22 +144,15 @@ export default function App() {
   const [servicesList, setServicesList] = useState<ServiceItem[]>(savedDraft?.servicesList || []);
   const [projectsList, setProjectsList] = useState<ProjectItem[]>(savedDraft?.projectsList || []);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>(savedDraft?.reviewsList || [
-    { id: '1', name: 'Sarah Jenkins', rating: 5, text: 'Absolutely fantastic service. Arrived on time and fixed the issue perfectly. Highly recommended!' },
-    { id: '2', name: 'Michael T.', rating: 5, text: 'Very professional. Transparent pricing and left the place spotless.' }
+    { id: '1', name: 'Rajesh Sharma', rating: 5, text: 'VasaiWeb completely transformed our online presence. Our site speed and inbound inquiries doubled!' }
   ]);
-  const [products, setProducts] = useState<Product[]>(savedDraft?.products || [
-    { id: '1', name: 'Standard Service Call', desc: 'Professional diagnostic inspection and preliminary repair.', price: '99', image: '', checkoutUrl: 'https://paypal.me/sample' }
-  ]);
-  const [teamList, setTeamList] = useState<TeamMemberItem[]>(savedDraft?.teamList || [
-    { id: 't1', name: 'Alexander Sterling', role: 'Managing Director & Founder', image: '' }
-  ]);
-  const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || [
-    { id: 'f1', question: 'What areas do you service?', answer: 'We service all metropolitan areas.' }
-  ]);
+  const [products, setProducts] = useState<Product[]>(savedDraft?.products || []);
+  const [teamList, setTeamList] = useState<TeamMemberItem[]>(savedDraft?.teamList || []);
+  const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || []);
 
   // Profiles State
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'Apex Melbourne Trades', phone: '+61 3 9111 2222', suburb: 'St. Kilda VIC', theme: 'luxury_builder' }
+    { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'tech_startup' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
@@ -225,7 +217,7 @@ export default function App() {
     }, 500);
   };
 
-  // --- PUBLISH HANDLER (OPENS IN NEW WINDOW / TAB) ---
+  // --- PUBLISH HANDLER (OPENS IMMEDIATELY IN A NEW TAB) ---
   const handlePublish = () => { 
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -243,11 +235,8 @@ export default function App() {
 
     const actualWorkingUrl = `${window.location.origin}?published=true`;
     
-    // Opens strictly in a brand new browser tab without disrupting builder state
+    // Opens directly on user click to bypass Chrome popup blockers
     window.open(actualWorkingUrl, '_blank');
-
-    setIsPublishing(true); 
-    setTimeout(() => { setIsPublishing(false); }, 800); 
   };
 
   if (isPublishedView) {
@@ -384,7 +373,7 @@ export default function App() {
 
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
                 <button onClick={handlePublish} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                  {isPublishing ? 'Publishing...' : 'Publish Changes'}
+                  Publish Changes
                 </button>
               </div>
             </header>
@@ -948,7 +937,7 @@ export default function App() {
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Product Image</label>
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
                                 const n = [...products]; n[index].image = url; setProducts(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                               {product.image && <button onClick={() => { const n = [...products]; n[index].image = ''; setProducts(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Image</button>}
                             </div>
 
@@ -979,7 +968,7 @@ export default function App() {
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Team Member Photo</label>
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
                                 const n = [...teamList]; n[index].image = url; setTeamList(n);
-                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
+                              })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                               {member.image && <button onClick={() => { const n = [...teamList]; n[index].image = ''; setTeamList(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Photo</button>}
                             </div>
                           </div>
