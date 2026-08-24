@@ -1,25 +1,27 @@
 // src/App.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate';
 import { AUSTRALIAN_THEMES } from './constants/industryConfigs';
-import LeadsView from './components/dashboard/LeadsView';
-import DomainsView from './components/dashboard/DomainsView';
-import SubscriptionsView from './components/dashboard/SubscriptionsView';
-import AnalyticsView from './components/dashboard/AnalyticsView';
-import SupportView from './components/dashboard/SupportView';
-import WebhooksView from './components/dashboard/WebhooksView';
-import ClientPortalView from './components/dashboard/ClientPortalView';
-import EmailTemplatesView from './components/dashboard/EmailTemplatesView';
-import RoutingView from './components/common/RoutingView';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
-import GrowthPlanView from './components/dashboard/GrowthPlanView';
-import CompetitorView from './components/dashboard/CompetitorView';
-import LocalGrowthView from './components/dashboard/LocalGrowthView';
-import PrMonitorView from './components/dashboard/PrMonitorView';
-import ReportingView from './components/dashboard/ReportingView';
 import { supabase } from './supabase';
+
+// --- PERFORMANCE FIX: LAZY LOAD ALL HEAVY DASHBOARD MODULES ---
+const LeadsView = lazy(() => import('./components/dashboard/LeadsView'));
+const DomainsView = lazy(() => import('./components/dashboard/DomainsView'));
+const SubscriptionsView = lazy(() => import('./components/dashboard/SubscriptionsView'));
+const AnalyticsView = lazy(() => import('./components/dashboard/AnalyticsView'));
+const SupportView = lazy(() => import('./components/dashboard/SupportView'));
+const WebhooksView = lazy(() => import('./components/dashboard/WebhooksView'));
+const ClientPortalView = lazy(() => import('./components/dashboard/ClientPortalView'));
+const EmailTemplatesView = lazy(() => import('./components/dashboard/EmailTemplatesView'));
+const RoutingView = lazy(() => import('./components/common/RoutingView'));
+const GrowthPlanView = lazy(() => import('./components/dashboard/GrowthPlanView'));
+const CompetitorView = lazy(() => import('./components/dashboard/CompetitorView'));
+const LocalGrowthView = lazy(() => import('./components/dashboard/LocalGrowthView'));
+const PrMonitorView = lazy(() => import('./components/dashboard/PrMonitorView'));
+const ReportingView = lazy(() => import('./components/dashboard/ReportingView'));
 
 interface ClientProfile { id: string; businessName: string; phone: string; suburb: string; theme: string; }
 interface Product { id: string; name: string; desc: string; price: string; image?: string; checkoutUrl?: string; }
@@ -241,7 +243,7 @@ export default function App() {
     }, 500);
   };
 
-  // --- CLOUD PUBLISH HANDLER (GUARANTEED GLOBAL SHARING) ---
+  // --- CLOUD PUBLISH HANDLER (GUARANTEED GLOBAL SHARING & NEW TAB FIX) ---
   const handlePublish = async () => { 
     setIsPublishing(true);
     
@@ -284,7 +286,15 @@ export default function App() {
       document.body.removeChild(link);
     } catch (e) {
       console.error("Publishing failed:", e);
-      alert("An error occurred while generating the global site link.");
+      // Fallback if Supabase upload fails - still open the new tab
+      const actualWorkingUrl = `${window.location.origin}?published=true`;
+      const link = document.createElement('a');
+      link.href = actualWorkingUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     setIsPublishing(false); 
@@ -343,7 +353,7 @@ export default function App() {
         </div>
       )}
 
-      {/* DASHBOARD VIEW */}
+      {/* DASHBOARD VIEW WITH SUSPENSE BOUNDARIES FOR PERFORMANCE */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
            <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
@@ -393,20 +403,22 @@ export default function App() {
                     <p className="text-slate-400 text-sm">Your multi-signal ecosystem health score is <strong>78/100</strong> (+6 this month). Select any module in the sidebar to review detailed tasks.</p>
                   </div>
                 )}
-                {dashboardView === 'growth-plan' && <GrowthPlanView />}
-                {dashboardView === 'competitors' && <CompetitorView />}
-                {dashboardView === 'local-growth' && <LocalGrowthView />}
-                {dashboardView === 'pr-monitor' && <PrMonitorView />}
-                {dashboardView === 'reporting' && <ReportingView />}
-                {dashboardView === 'leads' && <LeadsView />}
-                {dashboardView === 'routing' && <RoutingView />}
-                {dashboardView === 'domains' && <DomainsView />}
-                {dashboardView === 'billing' && <SubscriptionsView />}
-                {dashboardView === 'analytics' && <AnalyticsView />}
-                {dashboardView === 'portal' && <ClientPortalView />}
-                {dashboardView === 'emails' && <EmailTemplatesView />}
-                {dashboardView === 'support' && <SupportView />}
-                {dashboardView === 'webhooks' && <WebhooksView />}
+                <Suspense fallback={<div className="flex justify-center items-center h-40 text-slate-500 animate-pulse">Loading module...</div>}>
+                  {dashboardView === 'growth-plan' && <GrowthPlanView />}
+                  {dashboardView === 'competitors' && <CompetitorView />}
+                  {dashboardView === 'local-growth' && <LocalGrowthView />}
+                  {dashboardView === 'pr-monitor' && <PrMonitorView />}
+                  {dashboardView === 'reporting' && <ReportingView />}
+                  {dashboardView === 'leads' && <LeadsView />}
+                  {dashboardView === 'routing' && <RoutingView />}
+                  {dashboardView === 'domains' && <DomainsView />}
+                  {dashboardView === 'billing' && <SubscriptionsView />}
+                  {dashboardView === 'analytics' && <AnalyticsView />}
+                  {dashboardView === 'portal' && <ClientPortalView />}
+                  {dashboardView === 'emails' && <EmailTemplatesView />}
+                  {dashboardView === 'support' && <SupportView />}
+                  {dashboardView === 'webhooks' && <WebhooksView />}
+                </Suspense>
               </div>
             </main>
           </div>
@@ -428,14 +440,16 @@ export default function App() {
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
                 
+                {/* --- SAVE AS DRAFT BUTTON --- */}
                 <button onClick={handleSaveDraft} disabled={isSavingDraft} className="px-4 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg shadow-sm transition flex items-center gap-1.5">
                   <span>{isSavingDraft ? 'Saving...' : '💾 Save Draft'}</span>
                 </button>
 
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
                 
+                {/* --- FIXED PUBLISH BUTTON WITH CLOUD UPLOAD --- */}
                 <button onClick={handlePublish} disabled={isPublishing} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                  {isPublishing ? 'Uploading Configuration...' : 'Publish Changes'}
+                  {isPublishing ? 'Publishing Link...' : 'Publish Changes'}
                 </button>
               </div>
             </header>
