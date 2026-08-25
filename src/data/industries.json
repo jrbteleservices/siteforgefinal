@@ -1,0 +1,54 @@
+{
+  "emergency-plumber": {
+    "name": "24/7 Emergency Plumbing",
+    "themeGroup": "urgent",
+    "features": {
+      "fileUpload": true,
+      "bookingCalendar": false,
+      "areaCalculator": false,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Dispatch Plumber Now",
+      "emergencyMode": true,
+      "guaranteeText": "60-Minute Response Time Guarantee",
+      "trustMarkers": ["Master Plumbers Assoc.", "Fully Licensed & Insured", "ABN Verified"],
+      "baseRate": 150
+    }
+  },
+  "aesthetic-clinic": {
+    "name": "Cosmetic & Aesthetic Clinic",
+    "themeGroup": "booking",
+    "features": {
+      "fileUpload": false,
+      "bookingCalendar": true,
+      "areaCalculator": false,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Book Consultation",
+      "emergencyMode": false,
+      "useExternalEmbed": true,
+      "externalEmbedUrl": "https://calendly.com/your-clinic-link",
+      "trustMarkers": ["AHPRA Registered", "Medical Board Certified", "Afterpay Available"],
+      "services": ["Anti-Wrinkle", "Dermal Fillers", "Skin Needling"]
+    }
+  },
+  "commercial-concreters": {
+    "name": "Commercial Concreting",
+    "themeGroup": "calculator",
+    "features": {
+      "fileUpload": true,
+      "bookingCalendar": false,
+      "areaCalculator": true,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Get Instant Estimate",
+      "emergencyMode": false,
+      "trustMarkers": ["Master Builders Australia", "Commercial Compliant", "SafeWork Certified"],
+      "baseRate": 85,
+      "calcUnit": "Square Meters (m²)"
+    }
+  }
+}
