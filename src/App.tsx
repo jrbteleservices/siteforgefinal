@@ -1,11 +1,14 @@
 // src/App.tsx
 
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate';
 import { AUSTRALIAN_THEMES } from './constants/industryConfigs';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
 import { supabase } from './supabase';
+
+import IndustryMasterTemplate from './pages/IndustryMasterTemplate';
 
 // --- PERFORMANCE FIX: LAZY LOAD ALL HEAVY DASHBOARD MODULES ---
 const LeadsView = lazy(() => import('./components/dashboard/LeadsView'));
@@ -34,22 +37,17 @@ interface LocationItem { id: string; name: string; address: string; phone: strin
 interface OperatingHourItem { id: string; days: string; hours: string; }
 interface SeoArticle { id: string; slug: string; title: string; subtitle: string; body: string; metaDescription: string; headerImage?: string; }
 
-export default function App() {
-  // --- LIVE PUBLISHED VIEW CHECK ---
+function AdminWorkspace() {
   const [isPublishedView] = useState(() => typeof window !== 'undefined' && window.location.search.includes('published=true'));
-  
-  // --- CLOUD CONFIG LOADER STATE ---
   const [publishedData, setPublishedData] = useState<any>(null);
   const [isLoadingSite, setIsLoadingSite] = useState(isPublishedView);
 
   const [session, setSession] = useState<any>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  // --- NAVIGATION STATE ---
   const [activePage, setActivePage] = useState<'dashboard' | 'builder'>('builder');
   const [dashboardView, setDashboardView] = useState<'overview' | 'growth-plan' | 'competitors' | 'local-growth' | 'pr-monitor' | 'reporting' | 'leads' | 'routing' | 'domains' | 'billing' | 'analytics' | 'portal' | 'emails' | 'support' | 'webhooks'>('overview');
   
-  // --- BUILDER TABS ---
   const [editorTab, setEditorTab] = useState<'content' | 'seo' | 'sections' | 'media' | 'layout' | 'commerce' | 'team'>('content');
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -57,10 +55,8 @@ export default function App() {
   const [draftSavedToast, setDraftSavedToast] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // Load Saved Draft from LocalStorage if Available
   const savedDraft = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteforge_builder_draft') || 'null') : null;
 
-  // Core Business Info & Additional Legal Info
   const [colorPalette, setColorPalette] = useState(savedDraft?.colorPalette || 'blue');
   const [streetAddress, setStreetAddress] = useState(savedDraft?.streetAddress || 'Station Road, Vasai West');
   const [city, setCity] = useState(savedDraft?.city || 'Vasai-Virar');
@@ -70,7 +66,15 @@ export default function App() {
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(savedDraft?.showSiteForgeBranding ?? true);
   const [showFooterMenu, setShowFooterMenu] = useState<boolean>(savedDraft?.showFooterMenu ?? true);
 
-  // Dynamic Hero and About Text Overrides (Including Buttons)
+  // --- NEW: GLOBAL SEO & TRACKING STATE ---
+  const [globalMetaTitle, setGlobalMetaTitle] = useState(savedDraft?.globalMetaTitle || '');
+  const [globalMetaDesc, setGlobalMetaDescription] = useState(savedDraft?.globalMetaDesc || '');
+  const [faviconUrl, setFaviconUrl] = useState(savedDraft?.faviconUrl || '');
+  const [ga4Id, setGa4Id] = useState(savedDraft?.ga4Id || '');
+  const [pixelId, setPixelId] = useState(savedDraft?.pixelId || '');
+  const [whatsappNumber, setWhatsappNumber] = useState(savedDraft?.whatsappNumber || '');
+  const [googleMapsUrl, setGoogleMapsUrl] = useState(savedDraft?.googleMapsUrl || '');
+
   const [heroTagline, setHeroTagline] = useState(savedDraft?.heroTagline || '');
   const [heroHeadline, setHeroHeadline] = useState(savedDraft?.heroHeadline || '');
   const [heroSubheadline, setHeroSubheadline] = useState(savedDraft?.heroSubheadline || '');
@@ -80,7 +84,6 @@ export default function App() {
   const [aboutBody, setAboutBody] = useState(savedDraft?.aboutBody || '');
   const [aboutButtonText, setAboutButtonText] = useState(savedDraft?.aboutButtonText || 'Explore Our Services');
 
-  // --- BLOG ARTICLES STATE ---
   const [seoArticles, setSeoArticles] = useState<SeoArticle[]>(savedDraft?.seoArticles || [
     {
       id: '1',
@@ -94,37 +97,21 @@ export default function App() {
   ]);
   const [selectedArticleId, setSelectedArticleId] = useState<string>('1');
 
-  // Additional Locations & Operating Hours State
   const [locations, setLocations] = useState<LocationItem[]>(savedDraft?.locations || []);
   const [operatingHours, setOperatingHours] = useState<OperatingHourItem[]>(savedDraft?.operatingHours || [
     { id: '1', days: 'Monday – Saturday', hours: '4:30 AM – 1:30 PM IST' }
   ]);
 
-  // Media & Logo Sizing Slider State
   const [isUploading, setIsUploading] = useState(false);
   const [siteLogo, setSiteLogo] = useState<string | null>(savedDraft?.siteLogo || null);
   const [logoSize, setLogoSize] = useState<number>(savedDraft?.logoSize || 40); 
   const [heroImage, setHeroImage] = useState<string | null>(savedDraft?.heroImage || null);
   const [heroOpacity, setHeroOpacity] = useState(savedDraft?.heroOpacity ?? 85);
 
-  // Layout Section Toggles
   const [activeSections, setActiveSections] = useState(savedDraft?.activeSections || {
-    hero: true,
-    about: true,
-    services: true,
-    whyUs: true,
-    projects: false,
-    reviews: true,
-    products: false,
-    team: false,
-    faq: false,
-    contact: true,
-    showCallButton: false,
-    showWhatsappButton: false,
-    showChatbotButton: false
+    hero: true, about: true, services: true, whyUs: true, projects: false, reviews: true, products: false, team: false, faq: false, contact: true, showCallButton: false, showWhatsappButton: false, showChatbotButton: false
   });
 
-  // Headers State
   const [headers, setHeaders] = useState(savedDraft?.headers || {
     services: { sub: 'OUR EXPERTISE', main: 'Engineered for Market Domination', desc: 'Comprehensive digital solutions.' },
     whyUs: { sub: 'REPUTATION & TRUST', main: 'Why Choose Us' },
@@ -138,7 +125,6 @@ export default function App() {
     { title: 'Excellence Awarded', desc: 'Recognized across commercial and residential sectors for elite craftsmanship.' }
   ]);
 
-  // Fully Editable Arrays
   const [servicesList, setServicesList] = useState<ServiceItem[]>(savedDraft?.servicesList || []);
   const [projectsList, setProjectsList] = useState<ProjectItem[]>(savedDraft?.projectsList || []);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>(savedDraft?.reviewsList || [
@@ -148,7 +134,6 @@ export default function App() {
   const [teamList, setTeamList] = useState<TeamMemberItem[]>(savedDraft?.teamList || []);
   const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || []);
 
-  // Profiles State
   const [profiles, setProfiles] = useState<ClientProfile[]>([
     { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'tech_startup' }
   ]);
@@ -159,42 +144,36 @@ export default function App() {
   const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || activeProfile.theme);
 
-  // --- GLOBALLY FETCH SITE CONFIG ON LOAD (IF PUBLISHED) ---
   useEffect(() => {
     if (isPublishedView) {
       const params = new URLSearchParams(window.location.search);
       const configCloudUrl = params.get('config');
 
       if (configCloudUrl) {
-        // Fetch from Supabase Cloud Config
         fetch(configCloudUrl)
           .then(res => res.json())
-          .then(data => {
-            setPublishedData(data);
-            setIsLoadingSite(false);
-          })
+          .then(data => { setPublishedData(data); setIsLoadingSite(false); })
           .catch(err => {
             console.error("Cloud fetch failed, reverting to local cache.", err);
             setPublishedData(JSON.parse(localStorage.getItem('siteforge_published_state') || 'null'));
             setIsLoadingSite(false);
           });
       } else {
-        // Fallback to local machine storage if no cloud link exists
         setPublishedData(JSON.parse(localStorage.getItem('siteforge_published_state') || 'null'));
         setIsLoadingSite(false);
       }
     }
   }, [isPublishedView]);
 
-  // --- AUTOMATIC AUTO-SAVE TO LOCALSTORAGE ---
   useEffect(() => {
-    if (isPublishedView) return; // Don't auto-save while viewing the live site
+    if (isPublishedView) return; 
     const currentState = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
       products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
-      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems,
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
     };
     localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
   }, [
@@ -202,7 +181,8 @@ export default function App() {
     siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
     aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
     products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
-    showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems, isPublishedView
+    showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems, isPublishedView,
+    globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
   ]);
 
   useEffect(() => {
@@ -225,7 +205,6 @@ export default function App() {
     setIsUploading(true); const url = await uploadImageToSupabase(file); if (url) setter(url); setIsUploading(false);
   };
 
-  // --- MANUAL SAVE AS DRAFT HANDLER ---
   const handleSaveDraft = () => {
     setIsSavingDraft(true);
     const currentState = {
@@ -233,20 +212,15 @@ export default function App() {
       siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
       products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
-      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems
+      showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems,
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
     };
     localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
-    setTimeout(() => {
-      setIsSavingDraft(false);
-      setDraftSavedToast(true);
-      setTimeout(() => setDraftSavedToast(false), 3000);
-    }, 500);
+    setTimeout(() => { setIsSavingDraft(false); setDraftSavedToast(true); setTimeout(() => setDraftSavedToast(false), 3000); }, 500);
   };
 
-  // --- CLOUD PUBLISH HANDLER (GUARANTEED GLOBAL SHARING & NEW TAB FIX) ---
   const handlePublish = async () => { 
     setIsPublishing(true);
-    
     const templateProps = {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
       logo: siteLogo, logoSize, heroImage, heroOpacity, 
@@ -256,19 +230,17 @@ export default function App() {
       showProducts: activeSections.products, 
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
+      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
     };
     
-    // Save locally for quick dev fallback
     localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
 
     try {
-      // Create a JSON payload of the entire site configuration
       const sitePayload = JSON.stringify({ templateProps, selectedTheme });
       const blob = new Blob([sitePayload], { type: 'application/json' });
       const file = new File([blob], `config_${Date.now()}.json`, { type: 'application/json' });
       
-      // Upload config to Supabase so it's globally accessible on any device
       const configCloudUrl = await uploadImageToSupabase(file); 
 
       let actualWorkingUrl = `${window.location.origin}?published=true`;
@@ -276,7 +248,6 @@ export default function App() {
         actualWorkingUrl += `&config=${encodeURIComponent(configCloudUrl)}`;
       }
 
-      // Bypass popups by mimicking a user-driven anchor tag click
       const link = document.createElement('a');
       link.href = actualWorkingUrl;
       link.target = '_blank';
@@ -286,7 +257,6 @@ export default function App() {
       document.body.removeChild(link);
     } catch (e) {
       console.error("Publishing failed:", e);
-      // Fallback if Supabase upload fails - still open the new tab
       const actualWorkingUrl = `${window.location.origin}?published=true`;
       const link = document.createElement('a');
       link.href = actualWorkingUrl;
@@ -296,7 +266,6 @@ export default function App() {
       link.click();
       document.body.removeChild(link);
     }
-
     setIsPublishing(false); 
   };
 
@@ -314,14 +283,11 @@ export default function App() {
 
     const dataToRender = publishedData ? publishedData.templateProps : {
       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-      logo: siteLogo, logoSize, heroImage, heroOpacity, 
-      heroTagline, heroHeadline, heroSubheadline, heroButtonText,
-      aboutTitle, aboutBody, aboutButtonText,
-      headers, servicesList, projectsList, reviewsList,
-      showProducts: activeSections.products, 
-      products, activeSections, themeMode, teamList, faqList,
-      locations, operatingHours, showSiteForgeBranding,
-      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
+      logo: siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+      aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
+      showProducts: activeSections.products, products, activeSections, themeMode, teamList, faqList,
+      locations, operatingHours, showSiteForgeBranding, additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
     };
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
@@ -335,7 +301,11 @@ export default function App() {
   }
 
   if (checkingAuth) return <div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Session...</div>;
-  if (!session) return <AuthView onLoginSuccess={() => setActivePage('dashboard')} />;
+  if (!session) return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-slate-950 text-slate-400">Loading Auth...</div>}>
+      <AuthView onLoginSuccess={() => setActivePage('dashboard')} />
+    </Suspense>
+  );
 
   const DashboardNavItem = ({ id, label }: { id: string, label: string }) => (
     <button onClick={() => { setActivePage('dashboard'); setDashboardView(id as any); }} className={`w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${dashboardView === id && activePage === 'dashboard' ? 'bg-blue-600/15 text-blue-500' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}`}>
@@ -345,15 +315,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
-      
-      {/* DRAFT SAVED TOAST */}
       {draftSavedToast && (
         <div className="absolute top-20 right-8 z-50 bg-emerald-600 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in">
           <span>✓ Draft Saved Successfully!</span>
         </div>
       )}
 
-      {/* DASHBOARD VIEW WITH SUSPENSE BOUNDARIES FOR PERFORMANCE */}
       {activePage === 'dashboard' && (
         <div className="flex h-full w-full">
            <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-10 shadow-2xl">
@@ -425,10 +392,8 @@ export default function App() {
         </div>
       )}
 
-      {/* BUILDER EDITORIAL VIEW */}
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
-          
           {!isPreviewMode && (
             <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
               <div className="flex items-center gap-4">
@@ -439,15 +404,10 @@ export default function App() {
                 <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2">
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
-                
-                {/* --- SAVE AS DRAFT BUTTON --- */}
                 <button onClick={handleSaveDraft} disabled={isSavingDraft} className="px-4 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg shadow-sm transition flex items-center gap-1.5">
                   <span>{isSavingDraft ? 'Saving...' : '💾 Save Draft'}</span>
                 </button>
-
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
-                
-                {/* --- FIXED PUBLISH BUTTON WITH CLOUD UPLOAD --- */}
                 <button onClick={handlePublish} disabled={isPublishing} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
                   {isPublishing ? 'Publishing Link...' : 'Publish Changes'}
                 </button>
@@ -456,10 +416,8 @@ export default function App() {
           )}
 
           <div className="flex flex-1 overflow-hidden relative">
-            
             {!isPreviewMode && (
               <div className="w-[460px] bg-slate-950 border-r border-slate-800 flex flex-col z-10 shadow-2xl relative">
-                
                 {isUploading && (
                   <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center">
                     <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-4">
@@ -468,7 +426,6 @@ export default function App() {
                     </div>
                   </div>
                 )}
-
                 <div className="flex p-2 gap-1 border-b border-slate-800 bg-slate-900/50 flex-wrap">
                   {(['content', 'seo', 'sections', 'media', 'layout', 'commerce', 'team'] as const).map(tab => (
                     <button key={tab} onClick={() => setEditorTab(tab)} className={`px-3 py-2 text-xs font-bold rounded-lg capitalize transition ${editorTab === tab ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>
@@ -478,8 +435,6 @@ export default function App() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                  
-                  {/* --- BLOGS MANAGER TAB --- */}
                   {editorTab === 'seo' && (
                     <div className="space-y-6 animate-in fade-in">
                       <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
@@ -532,33 +487,27 @@ export default function App() {
                         return (
                           <div className="space-y-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
                             <h5 className="font-bold text-xs text-blue-400 uppercase tracking-widest">Editing Blog Article</h5>
-                            
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">URL Slug</label>
                               <input type="text" value={currentArt.slug} onChange={(e) => updateCurrentArt('slug', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white font-mono" />
                             </div>
-
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">Article Title (H1)</label>
                               <input type="text" value={currentArt.title} onChange={(e) => updateCurrentArt('title', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold" />
                             </div>
-
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">Subtitle (H2)</label>
                               <input type="text" value={currentArt.subtitle} onChange={(e) => updateCurrentArt('subtitle', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                             </div>
-
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blog Header Image (URL or Upload)</label>
                               <input type="text" value={currentArt.headerImage || ''} onChange={(e) => updateCurrentArt('headerImage', e.target.value)} placeholder="https://..." className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white mb-2" />
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => updateCurrentArt('headerImage', url))} className="text-xs text-slate-400 file:py-1 file:px-2 file:bg-blue-600 file:text-white cursor-pointer" />
                             </div>
-
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">Meta Description</label>
                               <textarea value={currentArt.metaDescription} onChange={(e) => updateCurrentArt('metaDescription', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} />
                             </div>
-
                             <div>
                               <label className="text-[10px] font-bold text-slate-400 uppercase">Full Article Body</label>
                               <textarea value={currentArt.body} onChange={(e) => updateCurrentArt('body', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white leading-relaxed" rows={6} />
@@ -571,7 +520,9 @@ export default function App() {
 
                   {editorTab === 'content' && (
                     <div className="space-y-5 animate-in fade-in">
-                      <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
+                      <Suspense fallback={<div className="text-slate-500 animate-pulse text-xs">Loading themes...</div>}>
+                        <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
+                      </Suspense>
                       
                       <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
                         <div>
@@ -694,13 +645,56 @@ export default function App() {
                           <input type="text" value={socials.facebook} onChange={(e) => setSocials({...socials, facebook: e.target.value})} placeholder="https://facebook.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                         </div>
                       </div>
+
+                      {/* NEW: SEO & BROWSER SETTINGS */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Global SEO & Browser</h4>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Title</label>
+                          <input type="text" value={globalMetaTitle} onChange={(e) => setGlobalMetaTitle(e.target.value)} placeholder="e.g. JRB Tele Services | Elite B2B Outsourcing" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Description</label>
+                          <textarea value={globalMetaDesc} onChange={(e) => setGlobalMetaDescription(e.target.value)} rows={2} placeholder="High-performance offshore telemarketing..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Favicon URL</label>
+                          <input type="text" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} placeholder="https://..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                      </div>
+
+                      {/* NEW: TRACKING & ANALYTICS */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Tracking & Analytics</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Google Analytics (GA4)</label>
+                            <input type="text" value={ga4Id} onChange={(e) => setGa4Id(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white font-mono" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta / Facebook Pixel</label>
+                            <input type="text" value={pixelId} onChange={(e) => setPixelId(e.target.value)} placeholder="XXXXXXXXXXXX" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white font-mono" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* NEW: ENHANCED CONTACT INTEGRATIONS */}
+                      <div className="space-y-3 border-t border-slate-800 pt-5">
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Enhanced Integrations</h4>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dedicated WhatsApp Number</label>
+                          <input type="text" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="+91 98230 00000" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Google Maps Embed URL</label>
+                          <input type="text" value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} placeholder="https://www.google.com/maps/embed?pb=..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                        </div>
+                      </div>
                     </div>
                   )}
 
                   {editorTab === 'sections' && (
                     <div className="space-y-8 animate-in fade-in">
-                      
-                      {/* HERO SECTION EDITS */}
                       <div className="space-y-4">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Hero Section</h3></div>
                         <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline (e.g. THE FUTURE OF WEB PRESENCE)" />
@@ -709,7 +703,6 @@ export default function App() {
                         <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Engage Our Team)" />
                       </div>
 
-                      {/* ABOUT US EDITS */}
                       <div className="space-y-4 pt-4 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">About Us Section</h3></div>
                         <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Us Title" />
@@ -717,11 +710,9 @@ export default function App() {
                         <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Get In Touch)" />
                       </div>
 
-                      {/* WHY CHOOSE US EDITORIAL CONTROLS */}
                       <div className="space-y-4 pt-4 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Why Choose Us Section</h3></div>
                         <input type="text" value={whyUsHeader.main} onChange={(e) => setWhyUsHeader({ ...whyUsHeader, main: e.target.value })} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Section Main Title" />
-                        
                         <div className="space-y-3 mt-3">
                           {whyUsItems.map((item, idx) => (
                             <div key={idx} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
@@ -732,7 +723,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* CLIENT REVIEWS EDITORIAL CONTROLS */}
                       <div className="space-y-4 pt-4 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Client Reviews Manager</h3></div>
                         <div className="space-y-4">
@@ -740,7 +730,6 @@ export default function App() {
                             <div key={rev.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => setReviewsList(reviewsList.filter(r => r.id !== rev.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                               <input type="text" value={rev.name} onChange={(e) => { const n = [...reviewsList]; n[idx].name = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Reviewer Name" />
-                              
                               <div>
                                 <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Star Rating (1 to 5)</label>
                                 <select value={rev.rating} onChange={(e) => { const n = [...reviewsList]; n[idx].rating = Number(e.target.value); setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white">
@@ -751,7 +740,6 @@ export default function App() {
                                   <option value={5}>⭐⭐⭐⭐⭐ 5 Stars</option>
                                 </select>
                               </div>
-
                               <textarea value={rev.text} onChange={(e) => { const n = [...reviewsList]; n[idx].text = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" rows={2} placeholder="Review text..." />
                             </div>
                           ))}
@@ -763,7 +751,6 @@ export default function App() {
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
-                        
                         <div className="space-y-4 mt-4">
                           {(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || []).map((service, index) => (
                             <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
@@ -771,17 +758,14 @@ export default function App() {
                                 const current = servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [];
                                 setServicesList(current.filter(s => s.id !== service.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              
                               <input type="text" value={service.title} onChange={(e) => { 
                                 const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
                                 current[index].title = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
-                              
                               <textarea value={service.desc} onChange={(e) => { 
                                 const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
                                 current[index].desc = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
-                              
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                                 {service.image && <img src={service.image} className="w-10 h-10 object-cover rounded-md" />}
                                 <div className="flex-1">
@@ -811,7 +795,6 @@ export default function App() {
                       <div className="space-y-4 pt-6 border-t border-slate-800">
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
                         <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        
                         <div className="space-y-4 mt-4">
                           {(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || []).map((proj, index) => (
                             <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
@@ -819,22 +802,18 @@ export default function App() {
                                 const current = projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [];
                                 setProjectsList(current.filter(p => p.id !== proj.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              
                               <input type="text" value={proj.subtitle} onChange={(e) => {
                                 const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
                                 current[index].subtitle = e.target.value; setProjectsList(current);
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle" />
-
                               <input type="text" value={proj.title} onChange={(e) => { 
                                 const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
                                 current[index].title = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
-                              
                               <textarea value={proj.desc} onChange={(e) => { 
                                 const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
                                 current[index].desc = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
-                              
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                                 {proj.image && <img src={proj.image} className="w-10 h-10 object-cover rounded-md" />}
                                 <div className="flex-1">
@@ -887,16 +866,13 @@ export default function App() {
                           {siteLogo && <button onClick={() => setSiteLogo(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Logo</button>}
                         </div>
                       </div>
-
                       <div className="space-y-2 pt-2">
                         <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
-                          Logo Size (Height)
-                          <span className="text-blue-400">{logoSize}px</span>
+                          Logo Size (Height) <span className="text-blue-400">{logoSize}px</span>
                         </label>
                         <input type="range" min="20" max="150" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
                         <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px (Max 150px)</span>
                       </div>
-
                       <div className="space-y-2 pt-4 border-t border-slate-800">
                         <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image Upload</label>
                         <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 bg-slate-900/50 hover:bg-slate-800/50 transition relative overflow-hidden">
@@ -905,11 +881,9 @@ export default function App() {
                           {heroImage && <button onClick={() => setHeroImage(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Hero Image</button>}
                         </div>
                       </div>
-
                       <div className="space-y-2 pt-4 border-t border-slate-800">
                         <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
-                          Hero Darkness (Transparency)
-                          <span className="text-blue-400">{heroOpacity}%</span>
+                          Hero Darkness (Transparency) <span className="text-blue-400">{heroOpacity}%</span>
                         </label>
                         <input type="range" min="0" max="100" value={heroOpacity} onChange={(e) => setHeroOpacity(Number(e.target.value))} className="w-full accent-blue-500" />
                       </div>
@@ -919,31 +893,26 @@ export default function App() {
                   {editorTab === 'layout' && (
                     <div className="space-y-4 animate-in fade-in">
                       <p className="text-xs text-slate-400 mb-4">Toggle visibility of website modules and floating action widgets.</p>
-                      
                       <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                         <span className="text-sm font-bold text-white">Show Footer Menu (Quick Links)</span>
                         <button onClick={() => setShowFooterMenu(!showFooterMenu)} className={`w-10 h-6 rounded-full p-1 transition-colors ${showFooterMenu ? 'bg-blue-500' : 'bg-slate-700'}`}>
                           <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showFooterMenu ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                       </div>
-
                       <div className="space-y-3 border-b border-slate-800 pb-5 mb-2">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Floating Sticky Actions (Default Off)</h4>
-                        
                         <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                           <span className="text-sm font-medium text-white">Call Us Now Button</span>
                           <button onClick={() => setActiveSections({ ...activeSections, showCallButton: !activeSections.showCallButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showCallButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
                             <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showCallButton ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                         </div>
-
                         <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                           <span className="text-sm font-medium text-white">Chat on WhatsApp Button</span>
                           <button onClick={() => setActiveSections({ ...activeSections, showWhatsappButton: !activeSections.showWhatsappButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showWhatsappButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
                             <div className={`w-4 h-4 bg-white rounded-full transition-transform ${activeSections.showWhatsappButton ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                         </div>
-
                         <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                           <span className="text-sm font-medium text-white">Virtual Assistant (AI Bot)</span>
                           <button onClick={() => setActiveSections({ ...activeSections, showChatbotButton: !activeSections.showChatbotButton })} className={`w-10 h-6 rounded-full p-1 transition-colors ${activeSections.showChatbotButton ? 'bg-blue-500' : 'bg-slate-700'}`}>
@@ -951,7 +920,6 @@ export default function App() {
                           </button>
                         </div>
                       </div>
-
                       <div className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-white">SiteForge Branding in Chat</span>
@@ -961,18 +929,10 @@ export default function App() {
                           <div className={`w-4 h-4 bg-white rounded-full transition-transform ${showSiteForgeBranding ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                       </div>
-
                       {Object.entries({
-                        hero: 'Hero Section',
-                        about: 'About Section',
-                        services: 'Services (What We Do)',
-                        whyUs: 'Why Choose Us',
-                        projects: 'Recent Projects',
-                        reviews: 'Client Reviews',
-                        products: 'Online Store / Products',
-                        team: 'Our Executive Team',
-                        faq: 'FAQ Section',
-                        contact: 'Contact Footer'
+                        hero: 'Hero Section', about: 'About Section', services: 'Services (What We Do)', whyUs: 'Why Choose Us',
+                        projects: 'Recent Projects', reviews: 'Client Reviews', products: 'Online Store / Products',
+                        team: 'Our Executive Team', faq: 'FAQ Section', contact: 'Contact Footer'
                       }).map(([key, label]) => (
                         <div key={key} className="flex items-center justify-between bg-slate-900 p-4 rounded-xl border border-slate-800">
                           <span className="text-sm font-medium text-white">{label}</span>
@@ -993,22 +953,18 @@ export default function App() {
                         {products.map((product, index) => (
                           <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
                             <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            
                             <div>
                               <label className="text-[10px] text-slate-400 uppercase font-bold">Product Title</label>
                               <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium mt-1" placeholder="Product Title" />
                             </div>
-
                             <div>
                               <label className="text-[10px] text-slate-400 uppercase font-bold">Product Description</label>
                               <textarea value={product.desc} onChange={(e) => { const n = [...products]; n[index].desc = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" rows={2} placeholder="Product description..." />
                             </div>
-
                             <div>
                               <label className="text-[10px] text-slate-400 uppercase font-bold">Price ($)</label>
                               <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white mt-1" placeholder="99" />
                             </div>
-
                             <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                               {product.image && <img src={product.image} className="w-12 h-12 object-cover rounded-md mb-2" />}
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Product Image</label>
@@ -1017,7 +973,6 @@ export default function App() {
                               })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
                               {product.image && <button onClick={() => { const n = [...products]; n[index].image = ''; setProducts(n); }} className="text-red-400 text-xs mt-1 hover:underline block">Delete Image</button>}
                             </div>
-
                             <div>
                               <label className="text-[10px] text-slate-400 uppercase font-bold">PayPal / Stripe Checkout Link</label>
                               <input type="text" value={product.checkoutUrl || ''} onChange={(e) => { const n = [...products]; n[index].checkoutUrl = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" placeholder="https://paypal.me/..." />
@@ -1039,7 +994,6 @@ export default function App() {
                             <button onClick={() => setTeamList(teamList.filter(t => t.id !== member.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                             <input type="text" value={member.name} onChange={(e) => { const n = [...teamList]; n[index].name = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Full Name" />
                             <input type="text" value={member.role} onChange={(e) => { const n = [...teamList]; n[index].role = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Job Title / Role" />
-                            
                             <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                               {member.image && <img src={member.image} className="w-10 h-10 object-cover rounded-md mb-2" />}
                               <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Team Member Photo</label>
@@ -1058,7 +1012,6 @@ export default function App() {
               </div>
             )}
 
-            {/* FULLSCREEN OVERLAYS */}
             {isPreviewMode && (
               <div className="absolute top-6 left-6 z-50 flex gap-3">
                 <button onClick={() => setIsPreviewMode(false)} className="bg-slate-900/90 backdrop-blur-md border border-slate-700 text-white shadow-2xl px-6 py-3 rounded-full font-black text-sm hover:bg-slate-800 transition flex items-center gap-2">
@@ -1070,7 +1023,6 @@ export default function App() {
               </div>
             )}
 
-            {/* LIVE PREVIEW CANVAS */}
             <div className={`flex-1 bg-slate-800 transition-all ${isPreviewMode ? 'p-0' : 'p-8'} overflow-y-auto flex justify-center items-start`}>
               <div className={`w-full bg-white shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all ${isPreviewMode ? 'max-w-none min-h-screen rounded-none' : 'max-w-[1200px] min-h-[800px] rounded-xl'}`}>
                 
@@ -1086,33 +1038,35 @@ export default function App() {
                 )}
 
                 <div className="relative">
-                  {/* MASTER ENGINE ROUTER WITH LOCATIONS & HOURS */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
-                      logo: siteLogo, logoSize, heroImage, heroOpacity, 
-                      heroTagline, heroHeadline, heroSubheadline, heroButtonText,
-                      aboutTitle, aboutBody, aboutButtonText,
-                      headers, servicesList, projectsList, reviewsList,
-                      showProducts: activeSections.products, 
-                      products, activeSections, themeMode, teamList, faqList,
-                      locations, operatingHours, showSiteForgeBranding,
-                      additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems
+                      logo: siteLogo, logoSize, heroImage, heroOpacity, heroTagline, heroHeadline, heroSubheadline, heroButtonText,
+                      aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
+                      showProducts: activeSections.products, products, activeSections, themeMode, teamList, faqList,
+                      locations, operatingHours, showSiteForgeBranding, additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
+                      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
                     };
-
                     const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
-
-                    return (
-                      <MasterPremiumTemplate config={currentConfig} {...templateProps as any} />
-                    );
+                    return <MasterPremiumTemplate config={currentConfig} {...templateProps as any} />;
                   })()}
                 </div>
-
               </div>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AdminWorkspace />} />
+        <Route path="/:industrySlug" element={<IndustryMasterTemplate />} />
+      </Routes>
+    </Router>
   );
 }
