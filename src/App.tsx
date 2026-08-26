@@ -2,8 +2,7 @@
 
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import MasterPremiumTemplate from './components/themes/MasterPremiumTemplate';
-import { AUSTRALIAN_THEMES } from './constants/industryConfigs';
+import industryData from './data/industries.json';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
 import { supabase } from './supabase';
@@ -135,14 +134,16 @@ function AdminWorkspace() {
   const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || []);
 
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'tech_startup' }
+    { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'dentist' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
   const [businessName, setBusinessName] = useState(savedDraft?.businessName || activeProfile.businessName);
   const [phone, setPhone] = useState(savedDraft?.phone || activeProfile.phone);
   const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
-  const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || activeProfile.theme);
+  
+  // JSON CONNECTED THEME STATE
+  const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || 'emergency-plumber');
 
   useEffect(() => {
     if (isPublishedView) {
@@ -291,11 +292,11 @@ function AdminWorkspace() {
     };
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
-    const currentConfig = AUSTRALIAN_THEMES[themeToRender] || AUSTRALIAN_THEMES['luxury_builder'];
 
+    // USE THE NEW DYNAMIC JSON TEMPLATE FOR THE PUBLISHED SITE
     return (
       <div className="w-full min-h-screen overflow-y-auto bg-slate-50">
-        <MasterPremiumTemplate config={currentConfig} {...dataToRender as any} />
+        <IndustryMasterTemplate previewSlug={themeToRender} previewState={dataToRender} />
       </div>
     );
   }
@@ -527,10 +528,11 @@ function AdminWorkspace() {
                       <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
                         <div>
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Industry Theme</label>
+                          {/* THE FULLY FIXED DROPDOWN */}
                           <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
-                            <optgroup label="Premium Verticals">
-                              {Object.values(AUSTRALIAN_THEMES).map(theme => (
-                                <option key={theme.id} value={theme.id}>{theme.name}</option>
+                            <optgroup label="Dynamic JSON Industries">
+                              {Object.entries(industryData).map(([slug, data]) => (
+                                <option key={slug} value={slug}>{(data as any).name}</option>
                               ))}
                             </optgroup>
                           </select>
@@ -752,18 +754,18 @@ function AdminWorkspace() {
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
                         <div className="space-y-4 mt-4">
-                          {(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || []).map((service, index) => (
+                          {(servicesList.length > 0 ? servicesList : []).map((service, index) => (
                             <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => {
-                                const current = servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [];
+                                const current = servicesList.length > 0 ? servicesList : [];
                                 setServicesList(current.filter(s => s.id !== service.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                               <input type="text" value={service.title} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
+                                const current = [...(servicesList.length > 0 ? servicesList : [])]; 
                                 current[index].title = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
                               <textarea value={service.desc} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])]; 
+                                const current = [...(servicesList.length > 0 ? servicesList : [])]; 
                                 current[index].desc = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
@@ -771,13 +773,13 @@ function AdminWorkspace() {
                                 <div className="flex-1">
                                   <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Service Image</label>
                                   <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                                    const current = [...(servicesList.length > 0 ? servicesList : [])];
                                     current[index].image = url; setServicesList(current);
                                   })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                                 </div>
                                 {service.image && (
                                   <button onClick={() => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                                    const current = [...(servicesList.length > 0 ? servicesList : [])];
                                     current[index].image = ''; setServicesList(current);
                                   }} className="text-red-400 text-xs hover:underline">Delete</button>
                                 )}
@@ -785,7 +787,7 @@ function AdminWorkspace() {
                             </div>
                           ))}
                           <button onClick={() => {
-                            const current = [...(servicesList.length > 0 ? servicesList : AUSTRALIAN_THEMES[selectedTheme]?.servicesDefault || [])];
+                            const current = [...(servicesList.length > 0 ? servicesList : [])];
                             current.push({ id: Date.now().toString(), title: 'New Service Item', desc: 'Detailed description here...', image: '' });
                             setServicesList(current);
                           }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Service Item</button>
@@ -796,22 +798,22 @@ function AdminWorkspace() {
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
                         <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
                         <div className="space-y-4 mt-4">
-                          {(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || []).map((proj, index) => (
+                          {(projectsList.length > 0 ? projectsList : []).map((proj, index) => (
                             <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => {
-                                const current = projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [];
+                                const current = projectsList.length > 0 ? projectsList : [];
                                 setProjectsList(current.filter(p => p.id !== proj.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                               <input type="text" value={proj.subtitle} onChange={(e) => {
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                const current = [...(projectsList.length > 0 ? projectsList : [])];
                                 current[index].subtitle = e.target.value; setProjectsList(current);
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle" />
                               <input type="text" value={proj.title} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
+                                const current = [...(projectsList.length > 0 ? projectsList : [])]; 
                                 current[index].title = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
                               <textarea value={proj.desc} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])]; 
+                                const current = [...(projectsList.length > 0 ? projectsList : [])]; 
                                 current[index].desc = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
@@ -819,13 +821,13 @@ function AdminWorkspace() {
                                 <div className="flex-1">
                                   <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Project Image</label>
                                   <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                    const current = [...(projectsList.length > 0 ? projectsList : [])];
                                     current[index].image = url; setProjectsList(current);
                                   })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                                 </div>
                                 {proj.image && (
                                   <button onClick={() => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                                    const current = [...(projectsList.length > 0 ? projectsList : [])];
                                     current[index].image = ''; setProjectsList(current);
                                   }} className="text-red-400 text-xs hover:underline">Delete</button>
                                 )}
@@ -833,7 +835,7 @@ function AdminWorkspace() {
                             </div>
                           ))}
                           <button onClick={() => {
-                            const current = [...(projectsList.length > 0 ? projectsList : AUSTRALIAN_THEMES[selectedTheme]?.projectsDefault || [])];
+                            const current = [...(projectsList.length > 0 ? projectsList : [])];
                             current.push({ id: Date.now().toString(), subtitle: 'New Location', title: 'New Project Showcase', desc: 'Project overview...', image: '' });
                             setProjectsList(current);
                           }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Project Item</button>
@@ -1038,6 +1040,7 @@ function AdminWorkspace() {
                 )}
 
                 <div className="relative">
+                  {/* THE NEW DYNAMIC PREVIEW WINDOW HOOKED INTO JSON */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -1047,8 +1050,7 @@ function AdminWorkspace() {
                       locations, operatingHours, showSiteForgeBranding, additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
                       globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
                     };
-                    const currentConfig = AUSTRALIAN_THEMES[selectedTheme] || AUSTRALIAN_THEMES['luxury_builder'];
-                    return <MasterPremiumTemplate config={currentConfig} {...templateProps as any} />;
+                    return <IndustryMasterTemplate previewSlug={selectedTheme} previewState={templateProps} />;
                   })()}
                 </div>
               </div>
@@ -1060,13 +1062,4 @@ function AdminWorkspace() {
   );
 }
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AdminWorkspace />} />
-        <Route path="/:industrySlug" element={<IndustryMasterTemplate />} />
-      </Routes>
-    </Router>
-  );
-}
+export default App;
