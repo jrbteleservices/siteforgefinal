@@ -6,6 +6,10 @@ import industryData from './data/industries.json';
 import { INDUSTRY_REGISTRY } from './data/industryRegistry';
 import AuthView from './components/auth/AuthView';
 import ProfileSwitcher from './components/profiles/ProfileSwitcher';
+import InstantDemoModal from './components/builder/InstantDemoModal';
+import GlobalBusinessSettings from './components/builder/GlobalBusinessSettings';
+import SectionLibrary, { SectionItem } from './components/builder/SectionLibrary';
+import PublishModal from './components/builder/PublishModal';
 import { supabase } from './supabase';
 
 import IndustryMasterTemplate from './pages/IndustryMasterTemplate';
@@ -55,6 +59,23 @@ function AdminWorkspace() {
   const [draftSavedToast, setDraftSavedToast] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
+  // --- STATE FOR PHASE 6, 7 & 10 BUILDER ENGINES ---
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [currentDemoId, setCurrentDemoId] = useState<string | null>(null);
+  const [activeTools, setActiveTools] = useState<Record<string, boolean>>({});
+  const [selectedDesignTheme, setSelectedDesignTheme] = useState('modern-contractor');
+  const [viewportMode, setViewportMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  
+  const [sectionsList, setSectionsList] = useState<SectionItem[]>([
+    { id: 'hero', type: 'hero', name: 'Hero Banner', enabled: true },
+    { id: 'about', type: 'about', name: 'About Us Section', enabled: true },
+    { id: 'services', type: 'services', name: 'Services Grid', enabled: true },
+    { id: 'tools', type: 'tools', name: 'Interactive Tool Engine', enabled: true },
+    { id: 'reviews', type: 'reviews', name: 'Client Reviews', enabled: true },
+    { id: 'contact', type: 'contact', name: 'Contact Footer', enabled: true }
+  ]);
+
   const savedDraft = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('siteforge_builder_draft') || 'null') : null;
 
   const [colorPalette, setColorPalette] = useState(savedDraft?.colorPalette || 'blue');
@@ -73,6 +94,7 @@ function AdminWorkspace() {
   const [pixelId, setPixelId] = useState(savedDraft?.pixelId || '');
   const [whatsappNumber, setWhatsappNumber] = useState(savedDraft?.whatsappNumber || '');
   const [googleMapsUrl, setGoogleMapsUrl] = useState(savedDraft?.googleMapsUrl || '');
+  const [externalCalendarUrl, setExternalCalendarUrl] = useState(savedDraft?.externalCalendarUrl || '');
 
   const [heroTagline, setHeroTagline] = useState(savedDraft?.heroTagline || '');
   const [heroHeadline, setHeroHeadline] = useState(savedDraft?.heroHeadline || '');
@@ -126,6 +148,28 @@ function AdminWorkspace() {
   const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
   const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || 'plumbing');
 
+  const handleHydrateDemo = (demoConfig: { businessName: string; industryId: string; location: string; themeId: string; services: string[] }) => {
+    const siteId = `demo_${Date.now()}`;
+    setCurrentDemoId(siteId);
+    setSelectedTheme(demoConfig.industryId);
+    setSelectedDesignTheme(demoConfig.themeId);
+    setBusinessName(demoConfig.businessName);
+    setSuburb(demoConfig.location);
+    setHeroHeadline(`${demoConfig.businessName} — Expert Services in ${demoConfig.location}`);
+    setHeroTagline(demoConfig.location.toUpperCase() + " SPECIALISTS");
+    setHeroButtonText(INDUSTRY_REGISTRY[demoConfig.industryId]?.recommendedCTAs[0] || "Get Started");
+    
+    const profile = INDUSTRY_REGISTRY[demoConfig.industryId];
+    if (profile && profile.defaultTools) {
+      const toolsMap: Record<string, boolean> = {};
+      profile.defaultTools.forEach(t => { toolsMap[t] = true; });
+      setActiveTools(toolsMap);
+    }
+
+    setServicesList(demoConfig.services.map((s, idx) => ({ id: idx.toString(), title: s, desc: `Professional ${s} executed to exact industry specifications.` })));
+    handleSaveDraft();
+  };
+
   useEffect(() => {
     if (isPublishedView) {
       const params = new URLSearchParams(window.location.search);
@@ -155,7 +199,7 @@ function AdminWorkspace() {
       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
       products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
       showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems,
-      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
     };
     localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
   }, [
@@ -164,7 +208,7 @@ function AdminWorkspace() {
     aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
     products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
     showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems, isPublishedView,
-    globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+    globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
   ]);
 
   useEffect(() => {
@@ -195,7 +239,7 @@ function AdminWorkspace() {
       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
       products, activeSections, themeMode, teamList, faqList, locations, operatingHours,
       showSiteForgeBranding, additionalLegalInfo, seoArticles, selectedTheme, showFooterMenu, whyUsHeader, whyUsItems,
-      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
     };
     localStorage.setItem('siteforge_builder_draft', JSON.stringify(currentState));
     setTimeout(() => { setIsSavingDraft(false); setDraftSavedToast(true); setTimeout(() => setDraftSavedToast(false), 3000); }, 500);
@@ -213,13 +257,13 @@ function AdminWorkspace() {
       products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding,
       additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
-      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
     };
     
-    localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme }));
+    localStorage.setItem('siteforge_published_state', JSON.stringify({ templateProps, selectedTheme, selectedDesignTheme }));
 
     try {
-      const sitePayload = JSON.stringify({ templateProps, selectedTheme });
+      const sitePayload = JSON.stringify({ templateProps, selectedTheme, selectedDesignTheme });
       const blob = new Blob([sitePayload], { type: 'application/json' });
       const file = new File([blob], `config_${Date.now()}.json`, { type: 'application/json' });
       
@@ -269,14 +313,15 @@ function AdminWorkspace() {
       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
       showProducts: activeSections.products, products, activeSections, themeMode, teamList, faqList,
       locations, operatingHours, showSiteForgeBranding, additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
-      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
     };
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
+    const designThemeToRender = publishedData ? publishedData.selectedDesignTheme : selectedDesignTheme;
 
     return (
       <div className="w-full min-h-screen overflow-y-auto bg-slate-50">
-        <IndustryMasterTemplate previewSlug={themeToRender} previewState={dataToRender} />
+        <IndustryMasterTemplate previewSlug={themeToRender} previewState={dataToRender} selectedThemeId={designThemeToRender} />
       </div>
     );
   }
@@ -296,6 +341,16 @@ function AdminWorkspace() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans relative">
+      <InstantDemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} onGenerateDemo={handleHydrateDemo} />
+      <PublishModal 
+        isOpen={isPublishModalOpen} 
+        onClose={() => setIsPublishModalOpen(false)} 
+        siteState={{ businessName, phone, email, globalMetaTitle, globalMetaDesc, activeTools }} 
+        onPublishSuccess={(url) => {
+          handlePublish();
+        }} 
+      />
+
       {draftSavedToast && (
         <div className="absolute top-20 right-8 z-50 bg-emerald-600 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in">
           <span>✓ Draft Saved Successfully!</span>
@@ -310,7 +365,8 @@ function AdminWorkspace() {
                 <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-600/30">SF</div>
                 <span className="font-bold text-lg tracking-tight text-white">SiteForge</span>
               </div>
-              <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Launch Builder</button>
+              <button onClick={() => setActivePage('builder')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20 mb-2">Launch Builder</button>
+              <button onClick={() => setIsDemoModalOpen(true)} className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20">✨ Generate Instant Demo</button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1">
@@ -375,13 +431,52 @@ function AdminWorkspace() {
 
       {activePage === 'builder' && (
         <div className="flex flex-col h-full w-full overflow-hidden">
+          {/* PHASE 6 SHAREABLE DEMO TOP BANNER */}
+          {currentDemoId && !isPreviewMode && (
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 border-b border-blue-800 px-6 py-2.5 flex justify-between items-center text-white z-30">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                <span className="text-xs font-bold">Active Prospect Demo: <span className="font-mono text-amber-300">/demo/{currentDemoId}</span></span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/demo/${currentDemoId}`);
+                    alert("Shareable demo link copied to clipboard!");
+                  }} 
+                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-xs font-bold rounded-lg transition"
+                >
+                  📋 Copy Demo Link
+                </button>
+                <button 
+                  onClick={() => {
+                    setCurrentDemoId(null);
+                    alert("Success! Demo promoted to active client production website configuration.");
+                  }} 
+                  className="px-4 py-1 bg-emerald-600 hover:bg-emerald-500 text-xs font-black rounded-lg shadow-lg shadow-emerald-600/30 transition"
+                >
+                  🚀 Convert to Client Website
+                </button>
+              </div>
+            </div>
+          )}
+
           {!isPreviewMode && (
             <header className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20">
               <div className="flex items-center gap-4">
                 <button onClick={() => { setActivePage('dashboard'); setDashboardView('overview'); }} className="text-slate-400 hover:text-white transition text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-800">&larr; Dashboard</button>
                 <span className="text-sm font-bold text-white flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Editing: {businessName || "New Site"}</span>
               </div>
+
+              {/* --- PHASE 7: RESPONSIVE DEVICE FRAME SWITCHER --- */}
+              <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+                <button onClick={() => setViewportMode('desktop')} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${viewportMode === 'desktop' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>🖥️ Desktop</button>
+                <button onClick={() => setViewportMode('tablet')} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${viewportMode === 'tablet' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>タブ Tablet</button>
+                <button onClick={() => setViewportMode('mobile')} className={`px-3 py-1 rounded-lg text-xs font-bold transition ${viewportMode === 'mobile' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>📱 Mobile</button>
+              </div>
+
               <div className="flex items-center gap-3">
+                <button onClick={() => setIsDemoModalOpen(true)} className="px-3 py-1.5 text-xs font-black bg-amber-500 text-slate-950 rounded-lg hover:bg-amber-400 transition uppercase tracking-wider">✨ Generate Demo</button>
                 <button onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')} className="px-3 py-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700 flex items-center gap-2">
                   {themeMode === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
                 </button>
@@ -389,8 +484,8 @@ function AdminWorkspace() {
                   <span>{isSavingDraft ? 'Saving...' : '💾 Save Draft'}</span>
                 </button>
                 <button onClick={() => setIsPreviewMode(true)} className="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition">Preview Site</button>
-                <button onClick={handlePublish} disabled={isPublishing} className="px-4 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/20 transition">
-                  {isPublishing ? 'Publishing Link...' : 'Publish Changes'}
+                <button onClick={() => setIsPublishModalOpen(true)} className="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-600/20 transition">
+                  🚀 Publish Live
                 </button>
               </div>
             </header>
@@ -504,27 +599,40 @@ function AdminWorkspace() {
                       <Suspense fallback={<div className="text-slate-500 animate-pulse text-xs">Loading themes...</div>}>
                         <ProfileSwitcher profiles={profiles} activeProfileId={activeProfileId} onSelectProfile={setActiveProfileId} onAddNew={() => {}} />
                       </Suspense>
+
+                      {/* --- PHASE 7: CENTRALIZED BUSINESS SETTINGS --- */}
+                      <GlobalBusinessSettings state={{ businessName, phone, email, whatsappNumber, streetAddress, externalCalendarUrl, faviconUrl }} setState={(updater: any) => {
+                        const next = typeof updater === 'function' ? updater({ businessName, phone, email, whatsappNumber, streetAddress, externalCalendarUrl, faviconUrl }) : updater;
+                        if (next.businessName !== undefined) setBusinessName(next.businessName);
+                        if (next.phone !== undefined) setPhone(next.phone);
+                        if (next.email !== undefined) setEmail(next.email);
+                        if (next.whatsappNumber !== undefined) setWhatsappNumber(next.whatsappNumber);
+                        if (next.streetAddress !== undefined) setStreetAddress(next.streetAddress);
+                        if (next.externalCalendarUrl !== undefined) setExternalCalendarUrl(next.externalCalendarUrl);
+                        if (next.faviconUrl !== undefined) setFaviconUrl(next.faviconUrl);
+                      }} />
+
                       {/* --- THEME FAMILY SELECTOR --- */}
-<div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3 mt-4">
-  <div className="flex justify-between items-center">
-    <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Design System Family</h4>
-    <span className="text-[10px] bg-amber-600/20 text-amber-400 px-2 py-0.5 rounded font-bold">Phase 3 Engine</span>
-  </div>
-  <div>
-    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Visual Theme</label>
-    <select 
-      value={selectedDesignTheme || 'modern-contractor'} 
-      onChange={(e) => setSelectedDesignTheme(e.target.value)} 
-      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:ring-1 focus:ring-amber-500 font-bold"
-    >
-      <option value="modern-clinical">Modern Clinical (Healthcare)</option>
-      <option value="heavy-industrial">Heavy Industrial (Cranes/CNC)</option>
-      <option value="luxury-editorial">Luxury Editorial (Real Estate/Photo)</option>
-      <option value="warm-hospitality">Warm Hospitality (Dining/Cafes)</option>
-      <option value="modern-contractor">Modern Contractor (Trades/Flooring)</option>
-    </select>
-  </div>
-</div>
+                      <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Design System Family</h4>
+                          <span className="text-[10px] bg-amber-600/20 text-amber-400 px-2 py-0.5 rounded font-bold">Phase 3 Engine</span>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Visual Theme</label>
+                          <select 
+                            value={selectedDesignTheme || 'modern-contractor'} 
+                            onChange={(e) => setSelectedDesignTheme(e.target.value)} 
+                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:ring-1 focus:ring-amber-500 font-bold"
+                          >
+                            <option value="modern-clinical">Modern Clinical (Healthcare)</option>
+                            <option value="heavy-industrial">Heavy Industrial (Cranes/CNC)</option>
+                            <option value="luxury-editorial">Luxury Editorial (Real Estate/Photo)</option>
+                            <option value="warm-hospitality">Warm Hospitality (Dining/Cafes)</option>
+                            <option value="modern-contractor">Modern Contractor (Trades/Flooring)</option>
+                          </select>
+                        </div>
+                      </div>
 
                       {/* --- INDUSTRY INTELLIGENCE REGISTRY SELECTOR --- */}
                       <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-4">
@@ -557,12 +665,28 @@ function AdminWorkspace() {
                           </select>
                         </div>
 
-                        {/* RECOMMENDED FOR THIS INDUSTRY BADGES */}
+                        {/* RECOMMENDED FOR THIS INDUSTRY BADGES & [ENABLE ALL RECOMMENDED] */}
                         {INDUSTRY_REGISTRY[selectedTheme] && (
                           <div className="space-y-3 pt-2 border-t border-slate-800 animate-in fade-in">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Smart Tool Recommendations</span>
+                              <button 
+                                onClick={() => {
+                                  const profile = INDUSTRY_REGISTRY[selectedTheme];
+                                  if (profile && profile.defaultTools) {
+                                    const updatedTools = { ...activeTools };
+                                    profile.defaultTools.forEach(toolId => { updatedTools[toolId] = true; });
+                                    setActiveTools(updatedTools);
+                                    alert(`Successfully enabled all recommended tools for ${profile.name}!`);
+                                  }
+                                }}
+                                className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg transition shadow-sm"
+                              >
+                                [Enable All Recommended]
+                              </button>
+                            </div>
                             <div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Recommended Tools & Features</span>
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap gap-1.5 mt-2">
                                 {INDUSTRY_REGISTRY[selectedTheme].recommendedTools.map(tool => (
                                   <span key={tool} className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
                                     ✓ {tool}
@@ -570,204 +694,23 @@ function AdminWorkspace() {
                                 ))}
                               </div>
                             </div>
-                            <div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Recommended Pages</span>
-                              <div className="flex flex-wrap gap-1.5">
-                                {INDUSTRY_REGISTRY[selectedTheme].recommendedPages.map(page => (
-                                  <span key={page} className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full font-bold">
-                                    📄 {page}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
                           </div>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
-                        <div>
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Color Palette</label>
-                          <select value={colorPalette} onChange={(e) => setColorPalette(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
-                            <option value="blue">Blue (Default)</option>
-                            <option value="emerald">Emerald Green</option>
-                            <option value="rose">Ruby Rose</option>
-                            <option value="amber">Amber Orange</option>
-                            <option value="violet">Deep Violet</option>
-                            <option value="cyan">Sky Cyan</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Core Business Info</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Name</label>
-                          <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="Enter business name..." />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</label>
-                            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. 1300 000 000" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business Email Address</label>
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="contact@business.com.au" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal Info</h4>
-                        <div>
-                          <input type="text" value={additionalLegalInfo} onChange={(e) => setAdditionalLegalInfo(e.target.value)} placeholder="ABN: 51 824 753 556" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">HQ Location Data</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Street Address</label>
-                          <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. 123 Commercial Rd" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Suburb</label>
-                            <input type="text" value={suburb} onChange={(e) => setSuburb(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Sydney" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">City</label>
-                            <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Sydney" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Hours of Operation</h4>
-                          <button onClick={() => setOperatingHours([...operatingHours, { id: Date.now().toString(), days: 'Sunday', hours: 'Closed' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
-                            + Add Schedule
-                          </button>
-                        </div>
-                        {operatingHours.map((item, index) => (
-                          <div key={item.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex gap-2 items-center relative">
-                            <input type="text" value={item.days} onChange={(e) => { const n = [...operatingHours]; n[index].days = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-medium" placeholder="Days" />
-                            <input type="text" value={item.hours} onChange={(e) => { const n = [...operatingHours]; n[index].hours = e.target.value; setOperatingHours(n); }} className="w-1/2 bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Hours" />
-                            <button onClick={() => setOperatingHours(operatingHours.filter(h => h.id !== item.id))} className="text-slate-500 hover:text-red-400 text-xs">✕</button>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Social Media Links</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Instagram URL</label>
-                          <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook URL</label>
-                          <input type="text" value={socials.facebook} onChange={(e) => setSocials({...socials, facebook: e.target.value})} placeholder="https://facebook.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Global SEO & Browser</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Title</label>
-                          <input type="text" value={globalMetaTitle} onChange={(e) => setGlobalMetaTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="e.g. Business Name | Professional Services" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Description</label>
-                          <textarea value={globalMetaDesc} onChange={(e) => setGlobalMetaDescription(e.target.value)} rows={2} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" placeholder="Describe your business for search engines..." />
-                        </div>
                       </div>
                     </div>
                   )}
 
                   {editorTab === 'sections' && (
-                    <div className="space-y-8 animate-in fade-in">
-                      <div className="space-y-4">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Hero Section</h3></div>
-                        <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline (e.g. INDUSTRY LEADER)" />
-                        <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline (e.g. Professional Solutions...)" />
-                        <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline content..." />
-                        <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text (e.g. Get Started)" />
-                      </div>
+                    <div className="space-y-6 animate-in fade-in">
+                      {/* --- PHASE 7: SECTION LIBRARY REORDERING --- */}
+                      <SectionLibrary sections={sectionsList} setSections={setSectionsList} />
 
                       <div className="space-y-4 pt-4 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">About Us Section</h3></div>
-                        <input type="text" value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="About Us Title" />
-                        <textarea value={aboutBody} onChange={(e) => setAboutBody(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={4} placeholder="About Us description body..." />
-                        <input type="text" value={aboutButtonText} onChange={(e) => setAboutButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text" />
-                      </div>
-
-                      <div className="space-y-4 pt-4 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Client Reviews Manager</h3></div>
-                        <div className="space-y-4">
-                          {reviewsList.map((rev, idx) => (
-                            <div key={rev.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => setReviewsList(reviewsList.filter(r => r.id !== rev.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={rev.name} onChange={(e) => { const n = [...reviewsList]; n[idx].name = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Reviewer Name" />
-                              <textarea value={rev.text} onChange={(e) => { const n = [...reviewsList]; n[idx].text = e.target.value; setReviewsList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" rows={2} placeholder="Review text..." />
-                            </div>
-                          ))}
-                          <button onClick={() => setReviewsList([...reviewsList, { id: Date.now().toString(), name: 'Client Name', rating: 5, text: 'Fantastic service!' }])} className="w-full py-2 border border-dashed border-blue-500 text-blue-400 font-bold text-xs rounded-xl">+ Add Review</button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 pt-6 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">What We Do (Services)</h3></div>
-                        <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
-                        <div className="space-y-4 mt-4">
-                          {servicesList.map((service, index) => (
-                            <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => {
-                                const current = [...servicesList];
-                                setServicesList(current.filter(s => s.id !== service.id));
-                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={service.title} onChange={(e) => { 
-                                const current = [...servicesList]; 
-                                current[index].title = e.target.value; setServicesList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
-                              <textarea value={service.desc} onChange={(e) => { 
-                                const current = [...servicesList]; 
-                                current[index].desc = e.target.value; setServicesList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
-                            </div>
-                          ))}
-                          <button onClick={() => {
-                            const current = [...servicesList];
-                            current.push({ id: Date.now().toString(), title: 'New Service Item', desc: 'Detailed description here...', image: '' });
-                            setServicesList(current);
-                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Service Item</button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4 pt-6 border-t border-slate-800">
-                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
-                        <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
-                        <div className="space-y-4 mt-4">
-                          {projectsList.map((proj, index) => (
-                            <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
-                              <button onClick={() => {
-                                const current = [...projectsList];
-                                setProjectsList(current.filter(p => p.id !== proj.id));
-                              }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                              <input type="text" value={proj.title} onChange={(e) => { 
-                                const current = [...projectsList]; 
-                                current[index].title = e.target.value; setProjectsList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
-                              <textarea value={proj.desc} onChange={(e) => { 
-                                const current = [...projectsList]; 
-                                current[index].desc = e.target.value; setProjectsList(current); 
-                              }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
-                            </div>
-                          ))}
-                          <button onClick={() => {
-                            const current = [...projectsList];
-                            current.push({ id: Date.now().toString(), subtitle: 'Location', title: 'Project Showcase', desc: 'Project overview...', image: '' });
-                            setProjectsList(current);
-                          }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Project Item</button>
-                        </div>
+                        <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Hero Banner Content</h3></div>
+                        <input type="text" value={heroTagline} onChange={(e) => setHeroTagline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Tagline" />
+                        <input type="text" value={heroHeadline} onChange={(e) => setHeroHeadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Headline" />
+                        <textarea value={heroSubheadline} onChange={(e) => setHeroSubheadline(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={3} placeholder="Sub-headline..." />
+                        <input type="text" value={heroButtonText} onChange={(e) => setHeroButtonText(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white font-bold text-blue-400" placeholder="Button Text" />
                       </div>
                     </div>
                   )}
@@ -781,13 +724,6 @@ function AdminWorkspace() {
                           <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, setSiteLogo)} className="text-xs text-slate-400 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white cursor-pointer" />
                           {siteLogo && <button onClick={() => setSiteLogo(null)} className="text-red-400 text-xs mt-1 hover:underline">Delete Logo</button>}
                         </div>
-                      </div>
-                      <div className="space-y-2 pt-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase flex justify-between">
-                          Logo Size (Height) <span className="text-blue-400">{logoSize}px</span>
-                        </label>
-                        <input type="range" min="20" max="150" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
-                        <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px</span>
                       </div>
                     </div>
                   )}
@@ -808,6 +744,50 @@ function AdminWorkspace() {
                     </div>
                   )}
 
+                  {editorTab === 'commerce' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <button onClick={() => setProducts([...products, { id: Date.now().toString(), name: 'New Product / Package', desc: 'Product description goes here...', price: '199', image: '', checkoutUrl: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Product / Package
+                      </button>
+                      <div className="space-y-4 mt-4">
+                        {products.map((product, index) => (
+                          <div key={product.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative group">
+                            <button onClick={() => setProducts(products.filter(p => p.id !== product.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Title</label>
+                              <input type="text" value={product.name} onChange={(e) => { const n = [...products]; n[index].name = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-medium mt-1" placeholder="Product Title" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Product Description</label>
+                              <textarea value={product.desc} onChange={(e) => { const n = [...products]; n[index].desc = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white mt-1" rows={2} placeholder="Product description..." />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold">Price ($)</label>
+                              <input type="number" value={product.price} onChange={(e) => { const n = [...products]; n[index].price = e.target.value; setProducts(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white mt-1" placeholder="99" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {editorTab === 'team' && (
+                    <div className="space-y-4 animate-in fade-in">
+                      <button onClick={() => setTeamList([...teamList, { id: Date.now().toString(), name: 'Team Member Name', role: 'Executive Title', image: '' }])} className="w-full py-2.5 rounded-xl border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs hover:bg-blue-500/10 transition">
+                        + Add Team Member
+                      </button>
+                      <div className="space-y-4 mt-4">
+                        {teamList.map((member, index) => (
+                          <div key={member.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
+                            <button onClick={() => setTeamList(teamList.filter(t => t.id !== member.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
+                            <input type="text" value={member.name} onChange={(e) => { const n = [...teamList]; n[index].name = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white font-bold" placeholder="Full Name" />
+                            <input type="text" value={member.role} onChange={(e) => { const n = [...teamList]; n[index].role = e.target.value; setTeamList(n); }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Role" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             )}
@@ -821,7 +801,12 @@ function AdminWorkspace() {
             )}
 
             <div className={`flex-1 bg-slate-800 transition-all ${isPreviewMode ? 'p-0' : 'p-8'} overflow-y-auto flex justify-center items-start`}>
-              <div className={`w-full bg-white shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all ${isPreviewMode ? 'max-w-none min-h-screen rounded-none' : 'max-w-[1200px] min-h-[800px] rounded-xl'}`}>
+              <div className={`w-full bg-white shadow-2xl shadow-black/50 overflow-hidden ring-1 ring-slate-900/5 transition-all ${
+                isPreviewMode ? 'max-w-none min-h-screen rounded-none' : 
+                viewportMode === 'mobile' ? 'max-w-[375px] min-h-[750px] rounded-3xl my-4 border-8 border-slate-900 shadow-2xl' :
+                viewportMode === 'tablet' ? 'max-w-[768px] min-h-[800px] rounded-2xl my-4 border-4 border-slate-900 shadow-2xl' :
+                'max-w-[1200px] min-h-[800px] rounded-xl'
+              }`}>
                 
                 {!isPreviewMode && (
                   <div className="h-10 bg-slate-100 border-b border-slate-200 flex items-center px-4 gap-2">
@@ -843,9 +828,9 @@ function AdminWorkspace() {
                       aboutTitle, aboutBody, aboutButtonText, headers, servicesList, projectsList, reviewsList,
                       showProducts: activeSections.products, products, activeSections, themeMode, teamList, faqList,
                       locations, operatingHours, showSiteForgeBranding, additionalLegalInfo, seoArticles, showFooterMenu, whyUsHeader, whyUsItems,
-                      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl
+                      globalMetaTitle, globalMetaDesc, faviconUrl, ga4Id, pixelId, whatsappNumber, googleMapsUrl, externalCalendarUrl, activeTools, selectedDesignTheme, sectionsList
                     };
-                    return <IndustryMasterTemplate previewSlug={selectedTheme} previewState={templateProps} />;
+                    return <IndustryMasterTemplate previewSlug={selectedTheme} previewState={templateProps} selectedThemeId={selectedDesignTheme} />;
                   })()}
                 </div>
               </div>
