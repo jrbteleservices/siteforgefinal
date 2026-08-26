@@ -65,7 +65,6 @@ function AdminWorkspace() {
   const [showSiteForgeBranding, setShowSiteForgeBranding] = useState<boolean>(savedDraft?.showSiteForgeBranding ?? true);
   const [showFooterMenu, setShowFooterMenu] = useState<boolean>(savedDraft?.showFooterMenu ?? true);
 
-  // --- NEW: GLOBAL SEO & TRACKING STATE ---
   const [globalMetaTitle, setGlobalMetaTitle] = useState(savedDraft?.globalMetaTitle || '');
   const [globalMetaDesc, setGlobalMetaDescription] = useState(savedDraft?.globalMetaDesc || '');
   const [faviconUrl, setFaviconUrl] = useState(savedDraft?.faviconUrl || '');
@@ -90,7 +89,7 @@ function AdminWorkspace() {
       title: 'High-Performance Web Development Guide',
       subtitle: 'Engineered for speed, conversion, and top-tier Google rankings.',
       body: 'Standard WordPress and Wix sites are bloated, slow, and lose valuable customers. We build lightning-fast web infrastructure tailored for local and global businesses.',
-      metaDescription: 'Professional web development guide engineered for high speed, elite conversion, and organic SEO performance.',
+      metaDescription: 'Professional web development guide engineered for high speed, elite conversion.',
       headerImage: ''
     }
   ]);
@@ -127,23 +126,21 @@ function AdminWorkspace() {
   const [servicesList, setServicesList] = useState<ServiceItem[]>(savedDraft?.servicesList || []);
   const [projectsList, setProjectsList] = useState<ProjectItem[]>(savedDraft?.projectsList || []);
   const [reviewsList, setReviewsList] = useState<ReviewItem[]>(savedDraft?.reviewsList || [
-    { id: '1', name: 'Rajesh Sharma', rating: 5, text: 'VasaiWeb completely transformed our online presence. Our site speed and inbound inquiries doubled!' }
+    { id: '1', name: 'Rajesh Sharma', rating: 5, text: 'Fantastic service!' }
   ]);
   const [products, setProducts] = useState<Product[]>(savedDraft?.products || []);
   const [teamList, setTeamList] = useState<TeamMemberItem[]>(savedDraft?.teamList || []);
   const [faqList, setFaqList] = useState<FaqItem[]>(savedDraft?.faqList || []);
 
   const [profiles, setProfiles] = useState<ClientProfile[]>([
-    { id: '1', businessName: 'VasaiWeb', phone: '+91 98230 00000', suburb: 'Vasai West', theme: 'dentist' }
+    { id: '1', businessName: 'Dr Nathan Dental', phone: '1300 000 000', suburb: 'Sydney', theme: 'dentist' }
   ]);
   const [activeProfileId, setActiveProfileId] = useState('1');
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
   const [businessName, setBusinessName] = useState(savedDraft?.businessName || activeProfile.businessName);
   const [phone, setPhone] = useState(savedDraft?.phone || activeProfile.phone);
   const [suburb, setSuburb] = useState(savedDraft?.suburb || activeProfile.suburb);
-  
-  // JSON CONNECTED THEME STATE
-  const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || 'emergency-plumber');
+  const [selectedTheme, setSelectedTheme] = useState(savedDraft?.selectedTheme || 'dentist');
 
   useEffect(() => {
     if (isPublishedView) {
@@ -293,7 +290,7 @@ function AdminWorkspace() {
 
     const themeToRender = publishedData ? publishedData.selectedTheme : selectedTheme;
 
-    // USE THE NEW DYNAMIC JSON TEMPLATE FOR THE PUBLISHED SITE
+    // USE THE NEW DYNAMIC TEMPLATE FOR THE PUBLISHED SITE
     return (
       <div className="w-full min-h-screen overflow-y-auto bg-slate-50">
         <IndustryMasterTemplate previewSlug={themeToRender} previewState={dataToRender} />
@@ -440,7 +437,7 @@ function AdminWorkspace() {
                     <div className="space-y-6 animate-in fade-in">
                       <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl">
                         <h4 className="font-bold text-blue-400 text-xs uppercase tracking-wider mb-1">Blogs & Articles Manager</h4>
-                        <p className="text-xs text-slate-300 leading-relaxed">Create and manage published blog posts. Articles appear under the website "Blogs" dropdown menu and are automatically indexed in your XML sitemap.</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">Create and manage published blog posts.</p>
                       </div>
 
                       <div className="flex justify-between items-center">
@@ -501,7 +498,7 @@ function AdminWorkspace() {
                               <input type="text" value={currentArt.subtitle} onChange={(e) => updateCurrentArt('subtitle', e.target.value)} className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blog Header Image (URL or Upload)</label>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blog Header Image</label>
                               <input type="text" value={currentArt.headerImage || ''} onChange={(e) => updateCurrentArt('headerImage', e.target.value)} placeholder="https://..." className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white mb-2" />
                               <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => updateCurrentArt('headerImage', url))} className="text-xs text-slate-400 file:py-1 file:px-2 file:bg-blue-600 file:text-white cursor-pointer" />
                             </div>
@@ -528,7 +525,6 @@ function AdminWorkspace() {
                       <div className="grid grid-cols-2 gap-4 border-b border-slate-800 pb-5">
                         <div>
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Industry Theme</label>
-                          {/* THE FULLY FIXED DROPDOWN */}
                           <select value={selectedTheme} onChange={(e) => setSelectedTheme(e.target.value)} className="mt-1 w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white focus:ring-1 focus:ring-blue-500">
                             <optgroup label="Dynamic JSON Industries">
                               {Object.entries(industryData).map(([slug, data]) => (
@@ -569,10 +565,9 @@ function AdminWorkspace() {
                       </div>
 
                       <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal / Registration Info</h4>
+                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Footer Legal Info</h4>
                         <div>
                           <input type="text" value={additionalLegalInfo} onChange={(e) => setAdditionalLegalInfo(e.target.value)} placeholder="ABN: 51 824 753 556" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                          <span className="text-[10px] text-slate-500 mt-1 block">Displayed in footer (e.g. ABN, GST, or company registration).</span>
                         </div>
                       </div>
 
@@ -594,28 +589,6 @@ function AdminWorkspace() {
                         </div>
                       </div>
 
-                      {/* ADDITIONAL LOCATIONS MANAGER */}
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Additional Locations</h4>
-                          <button onClick={() => setLocations([...locations, { id: Date.now().toString(), name: 'Branch Office', address: '456 Commercial Rd', phone: '+61 3 0000 0000', email: 'branch@business.com.au' }])} className="text-xs font-bold text-blue-400 hover:text-blue-300">
-                            + Add Location
-                          </button>
-                        </div>
-                        {locations.map((loc, index) => (
-                          <div key={loc.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2 relative">
-                            <button onClick={() => setLocations(locations.filter(l => l.id !== loc.id))} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
-                            <input type="text" value={loc.name} onChange={(e) => { const n = [...locations]; n[index].name = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white font-bold" placeholder="Branch Name" />
-                            <input type="text" value={loc.address} onChange={(e) => { const n = [...locations]; n[index].address = e.target.value; setLocations(n); }} className="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Street Address" />
-                            <div className="grid grid-cols-2 gap-2">
-                              <input type="text" value={loc.phone} onChange={(e) => { const n = [...locations]; n[index].phone = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Phone" />
-                              <input type="text" value={loc.email} onChange={(e) => { const n = [...locations]; n[index].email = e.target.value; setLocations(n); }} className="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-white" placeholder="Email" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* HOURS OF OPERATION MANAGER */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <div className="flex justify-between items-center">
                           <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Hours of Operation</h4>
@@ -639,57 +612,20 @@ function AdminWorkspace() {
                           <input type="text" value={socials.instagram} onChange={(e) => setSocials({...socials, instagram: e.target.value})} placeholder="https://instagram.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TikTok URL</label>
-                          <input type="text" value={socials.tiktok} onChange={(e) => setSocials({...socials, tiktok: e.target.value})} placeholder="https://tiktok.com/@..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
-                        </div>
-                        <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Facebook URL</label>
                           <input type="text" value={socials.facebook} onChange={(e) => setSocials({...socials, facebook: e.target.value})} placeholder="https://facebook.com/..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" />
                         </div>
                       </div>
 
-                      {/* NEW: SEO & BROWSER SETTINGS */}
                       <div className="space-y-3 border-t border-slate-800 pt-5">
                         <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Global SEO & Browser</h4>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Title</label>
-                          <input type="text" value={globalMetaTitle} onChange={(e) => setGlobalMetaTitle(e.target.value)} placeholder="e.g. JRB Tele Services | Elite B2B Outsourcing" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          <input type="text" value={globalMetaTitle} onChange={(e) => setGlobalMetaTitle(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Site Meta Description</label>
-                          <textarea value={globalMetaDesc} onChange={(e) => setGlobalMetaDescription(e.target.value)} rows={2} placeholder="High-performance offshore telemarketing..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Favicon URL</label>
-                          <input type="text" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} placeholder="https://..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                        </div>
-                      </div>
-
-                      {/* NEW: TRACKING & ANALYTICS */}
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Tracking & Analytics</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Google Analytics (GA4)</label>
-                            <input type="text" value={ga4Id} onChange={(e) => setGa4Id(e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white font-mono" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta / Facebook Pixel</label>
-                            <input type="text" value={pixelId} onChange={(e) => setPixelId(e.target.value)} placeholder="XXXXXXXXXXXX" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white font-mono" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* NEW: ENHANCED CONTACT INTEGRATIONS */}
-                      <div className="space-y-3 border-t border-slate-800 pt-5">
-                        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Enhanced Integrations</h4>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dedicated WhatsApp Number</label>
-                          <input type="text" value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value)} placeholder="+91 98230 00000" className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Google Maps Embed URL</label>
-                          <input type="text" value={googleMapsUrl} onChange={(e) => setGoogleMapsUrl(e.target.value)} placeholder="https://www.google.com/maps/embed?pb=..." className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
+                          <textarea value={globalMetaDesc} onChange={(e) => setGlobalMetaDescription(e.target.value)} rows={2} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white" />
                         </div>
                       </div>
                     </div>
@@ -754,18 +690,18 @@ function AdminWorkspace() {
                         <input type="text" value={headers.services.sub} onChange={(e) => setHeaders({...headers, services: {...headers.services, sub: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-white" placeholder="Subtitle" />
                         <input type="text" value={headers.services.main} onChange={(e) => setHeaders({...headers, services: {...headers.services, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" placeholder="Main Title" />
                         <div className="space-y-4 mt-4">
-                          {(servicesList.length > 0 ? servicesList : []).map((service, index) => (
+                          {servicesList.map((service, index) => (
                             <div key={service.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => {
-                                const current = servicesList.length > 0 ? servicesList : [];
+                                const current = [...servicesList];
                                 setServicesList(current.filter(s => s.id !== service.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                               <input type="text" value={service.title} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : [])]; 
+                                const current = [...servicesList]; 
                                 current[index].title = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Service Title" />
                               <textarea value={service.desc} onChange={(e) => { 
-                                const current = [...(servicesList.length > 0 ? servicesList : [])]; 
+                                const current = [...servicesList]; 
                                 current[index].desc = e.target.value; setServicesList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Service Description" />
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
@@ -773,13 +709,13 @@ function AdminWorkspace() {
                                 <div className="flex-1">
                                   <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Service Image</label>
                                   <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : [])];
+                                    const current = [...servicesList];
                                     current[index].image = url; setServicesList(current);
                                   })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                                 </div>
                                 {service.image && (
                                   <button onClick={() => {
-                                    const current = [...(servicesList.length > 0 ? servicesList : [])];
+                                    const current = [...servicesList];
                                     current[index].image = ''; setServicesList(current);
                                   }} className="text-red-400 text-xs hover:underline">Delete</button>
                                 )}
@@ -787,7 +723,7 @@ function AdminWorkspace() {
                             </div>
                           ))}
                           <button onClick={() => {
-                            const current = [...(servicesList.length > 0 ? servicesList : [])];
+                            const current = [...servicesList];
                             current.push({ id: Date.now().toString(), title: 'New Service Item', desc: 'Detailed description here...', image: '' });
                             setServicesList(current);
                           }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Service Item</button>
@@ -798,22 +734,22 @@ function AdminWorkspace() {
                         <div className="border-b border-slate-800 pb-2"><h3 className="font-bold text-white text-sm">Recent Projects (Portfolio)</h3></div>
                         <input type="text" value={headers.projects.main} onChange={(e) => setHeaders({...headers, projects: {...headers.projects, main: e.target.value}})} className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-sm font-bold text-white" />
                         <div className="space-y-4 mt-4">
-                          {(projectsList.length > 0 ? projectsList : []).map((proj, index) => (
+                          {projectsList.map((proj, index) => (
                             <div key={proj.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3 relative">
                               <button onClick={() => {
-                                const current = projectsList.length > 0 ? projectsList : [];
+                                const current = [...projectsList];
                                 setProjectsList(current.filter(p => p.id !== proj.id));
                               }} className="absolute top-2 right-2 text-slate-500 hover:text-red-400 text-xs">✕</button>
                               <input type="text" value={proj.subtitle} onChange={(e) => {
-                                const current = [...(projectsList.length > 0 ? projectsList : [])];
+                                const current = [...projectsList];
                                 current[index].subtitle = e.target.value; setProjectsList(current);
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-1.5 text-xs text-white" placeholder="Location/Subtitle" />
                               <input type="text" value={proj.title} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : [])]; 
+                                const current = [...projectsList]; 
                                 current[index].title = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white" placeholder="Project Title" />
                               <textarea value={proj.desc} onChange={(e) => { 
-                                const current = [...(projectsList.length > 0 ? projectsList : [])]; 
+                                const current = [...projectsList]; 
                                 current[index].desc = e.target.value; setProjectsList(current); 
                               }} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white" rows={2} placeholder="Project Description" />
                               <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
@@ -821,13 +757,13 @@ function AdminWorkspace() {
                                 <div className="flex-1">
                                   <label className="text-[10px] text-slate-400 uppercase font-bold block mb-1">Upload Project Image</label>
                                   <input type="file" accept="image/*" disabled={isUploading} onChange={(e) => handleGeneralImageUpload(e, (url) => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : [])];
+                                    const current = [...projectsList];
                                     current[index].image = url; setProjectsList(current);
                                   })} className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" />
                                 </div>
                                 {proj.image && (
                                   <button onClick={() => {
-                                    const current = [...(projectsList.length > 0 ? projectsList : [])];
+                                    const current = [...projectsList];
                                     current[index].image = ''; setProjectsList(current);
                                   }} className="text-red-400 text-xs hover:underline">Delete</button>
                                 )}
@@ -835,7 +771,7 @@ function AdminWorkspace() {
                             </div>
                           ))}
                           <button onClick={() => {
-                            const current = [...(projectsList.length > 0 ? projectsList : [])];
+                            const current = [...projectsList];
                             current.push({ id: Date.now().toString(), subtitle: 'New Location', title: 'New Project Showcase', desc: 'Project overview...', image: '' });
                             setProjectsList(current);
                           }} className="w-full py-2.5 border border-dashed border-blue-500/50 text-blue-400 font-bold text-xs rounded-xl hover:bg-blue-500/10 transition">+ Add Project Item</button>
@@ -873,7 +809,7 @@ function AdminWorkspace() {
                           Logo Size (Height) <span className="text-blue-400">{logoSize}px</span>
                         </label>
                         <input type="range" min="20" max="150" value={logoSize} onChange={(e) => setLogoSize(Number(e.target.value))} className="w-full accent-blue-500" />
-                        <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px (Max 150px)</span>
+                        <span className="text-[10px] text-slate-500 block">Recommended stable range: 40px – 100px</span>
                       </div>
                       <div className="space-y-2 pt-4 border-t border-slate-800">
                         <label className="text-xs font-bold text-slate-400 uppercase">Hero Background Image Upload</label>
@@ -1040,7 +976,7 @@ function AdminWorkspace() {
                 )}
 
                 <div className="relative">
-                  {/* THE NEW DYNAMIC PREVIEW WINDOW HOOKED INTO JSON */}
+                  {/* INJECTING THE NEW JSON TEMPLATE ENGINE RIGHT INTO THE PREVIEW WINDOW */}
                   {(() => {
                     const templateProps = {
                       businessName, phone, suburb, city, streetAddress, email, socials, colorPalette,
@@ -1059,7 +995,10 @@ function AdminWorkspace() {
         </div>
       )}
     </div>
-  export default function App() {
+  );
+}
+
+export default function App() {
   return (
     <Router>
       <Routes>
