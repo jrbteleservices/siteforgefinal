@@ -6,6 +6,17 @@ import industryData from '../data/industries.json';
 import { DESIGN_FAMILIES } from '../data/themeEngine';
 import ToolRenderer from '../components/tools/ToolRenderer';
 
+const defaultConfig = {
+  variables: {
+    baseRate: 100,
+    calcUnit: 'm²',
+    ctaLabel: 'Get Started',
+    services: ['Professional Consultation', 'Standard Service', 'Emergency Callout'],
+    trustMarkers: ['Licensed & Insured', 'Satisfaction Guaranteed']
+  },
+  defaultTool: 'estimator'
+};
+
 export default function IndustryMasterTemplate({ previewSlug, previewState, selectedThemeId }: { previewSlug?: string, previewState?: any, selectedThemeId?: string }) {
   const params = useParams<{ industrySlug: string }>();
   
@@ -16,7 +27,7 @@ export default function IndustryMasterTemplate({ previewSlug, previewState, sele
   if (rawSlug === 'Heavy Crane & Rigging Hire') rawSlug = 'crane-hire';
 
   const industrySlug = (industryData as any)[rawSlug] ? rawSlug : 'plumbing';
-  const config = (industryData as any)[industrySlug];
+  const config = (industryData as any)[industrySlug] || (industryData as any)['plumbing'] || defaultConfig;
   const clientState = previewState || {};
 
   // Theme Resolution: Matches industry type to design family or user selection
@@ -29,8 +40,6 @@ export default function IndustryMasterTemplate({ previewSlug, previewState, sele
     { sender: 'bot', text: 'Hello! How can we assist with your project today?' }
   ]);
   const [chatInput, setChatInput] = useState('');
-
-  if (!config) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Loading Engine...</div>;
 
   const businessName = clientState?.businessName || "";
   const phone = clientState?.phone || "";
@@ -67,7 +76,7 @@ export default function IndustryMasterTemplate({ previewSlug, previewState, sele
               </div>
             )}
             <button onClick={() => setCurrentPage('contact')} className={`px-6 py-2.5 font-bold text-sm transition transform hover:scale-105 ${theme.palette.primary} ${theme.style.buttonStyle}`}>
-              {config.variables.ctaLabel}
+              {config?.variables?.ctaLabel || 'Get Started'}
             </button>
           </div>
         </div>
@@ -122,7 +131,7 @@ export default function IndustryMasterTemplate({ previewSlug, previewState, sele
               <div className="bg-slate-900 text-white rounded-3xl p-8 shadow-2xl space-y-6">
                 <h4 className="text-xs font-black uppercase tracking-widest text-blue-400">Industry Compliance & Trust</h4>
                 <ul className="space-y-4">
-                  {config.variables.trustMarkers?.map((marker: string) => (
+                  {(config?.variables?.trustMarkers || ['Licensed & Insured', 'Satisfaction Guaranteed']).map((marker: string) => (
                     <li key={marker} className="flex items-center gap-3 font-bold text-sm">
                       <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">✓</span>
                       {marker}
@@ -157,7 +166,7 @@ export default function IndustryMasterTemplate({ previewSlug, previewState, sele
               <p className="text-lg text-slate-600">Comprehensive solutions tailored to your operational needs.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {(clientState?.servicesList?.length > 0 ? clientState.servicesList : config.variables.services?.map((s: string, idx: number) => ({ id: idx, title: s, desc: 'Professional grade execution tailored to commercial specifications.' }))).map((svc: any) => (
+              {(clientState?.servicesList?.length > 0 ? clientState.servicesList : (config?.variables?.services || ['Service 1', 'Service 2', 'Service 3']).map((s: string, idx: number) => ({ id: idx, title: s, desc: 'Professional grade execution tailored to commercial specifications.' }))).map((svc: any) => (
                 <div key={svc.id || svc.title} className={`${theme.palette.surface} ${theme.style.borderRadius} ${theme.style.cardStyle} p-8 space-y-4`}>
                   {svc.image && <img src={svc.image} className="w-full h-48 object-cover rounded-2xl mb-4" />}
                   <h3 className="text-xl font-black">{svc.title}</h3>
