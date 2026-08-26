@@ -1,12 +1,26 @@
+// src/pages/IndustryMasterTemplate.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import industryData from '../data/industries.json';
 
 type IndustrySlug = keyof typeof industryData;
 
-export default function IndustryMasterTemplate() {
-  const { industrySlug } = useParams<{ industrySlug: string }>();
-  const [config, setConfig] = useState<any>(null);
+export default function IndustryMasterTemplate({ previewSlug, previewState }: { previewSlug?: string, previewState?: any }) {
+  const params = useParams<{ industrySlug: string }>();
+  
+  // Normalize the slug: if it's a display name like "Premium Dental Clinic", map it back to "dentist"
+  let rawSlug = previewSlug || params.industrySlug || 'dentist';
+  if (rawSlug === 'Premium Dental Clinic') rawSlug = 'dentist';
+  if (rawSlug === '24/7 Emergency Plumbing') rawSlug = 'emergency-plumber';
+  if (rawSlug === 'Commercial Concreting') rawSlug = 'commercial-concreters';
+  if (rawSlug === 'Cosmetic & Aesthetic Clinic') rawSlug = 'aesthetic-clinic';
+  if (rawSlug === 'Premium Smash Repairs') rawSlug = 'smash-repairs';
+  if (rawSlug === 'Custom Home Builders') rawSlug = 'custom-home-builders';
+
+  const industrySlug = (industryData as any)[rawSlug] ? rawSlug : 'dentist';
+  
+  const [config, setConfig] = useState<any>((industryData as any)[industrySlug]);
   const [clientState, setClientState] = useState<any>(null);
 
   // Feature States
@@ -16,23 +30,27 @@ export default function IndustryMasterTemplate() {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    if (industrySlug && industryData[industrySlug as IndustrySlug]) {
-      setConfig(industryData[industrySlug as IndustrySlug]);
+    if (industrySlug && (industryData as any)[industrySlug]) {
+      setConfig((industryData as any)[industrySlug]);
     }
-    try {
-      const saved = JSON.parse(localStorage.getItem('siteforge_published_state') || 'null');
-      if (saved && saved.templateProps) {
-        setClientState(saved.templateProps);
-      }
-    } catch (e) { console.error(e); }
-  }, [industrySlug]);
+    
+    if (previewState) {
+      setClientState(previewState);
+    } else {
+      try {
+        const saved = JSON.parse(localStorage.getItem('siteforge_published_state') || 'null');
+        if (saved && saved.templateProps) {
+          setClientState(saved.templateProps);
+        }
+      } catch (e) { console.error(e); }
+    }
+  }, [industrySlug, previewState]);
 
-  if (!industrySlug || !config) {
+  if (!config) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
-        <h1 className="text-4xl font-black mb-4">404 - Industry Not Found</h1>
-        <p className="text-slate-400 mb-8">The requested industry module does not exist in the routing table.</p>
-        <Link to="/" className="px-6 py-3 bg-blue-600 rounded-lg font-bold hover:bg-blue-500 transition">Return to Builder</Link>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white w-full h-full">
+        <h1 className="text-4xl font-black mb-4">System Initializing...</h1>
+        <p className="text-slate-400 mb-8">Please select a valid Industry Theme.</p>
       </div>
     );
   }
@@ -40,23 +58,14 @@ export default function IndustryMasterTemplate() {
   const businessName = clientState?.businessName || config.name;
   const phone = clientState?.phone || "1300 000 000";
   const hours = clientState?.operatingHours || [];
-  const socials = clientState?.socials || { facebook: '', instagram: '', tiktok: '' };
   const logo = clientState?.logo;
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      industry: config.name,
-      estimatedSqm: config.features.areaCalculator ? sqm : null,
-      estimatedCost: config.features.areaCalculator ? sqm * config.variables.baseRate : null,
-      timestamp: new Date().toISOString()
-    };
-    console.log("Centralized Submission Payload:", payload);
-    alert("Lead captured and bundled successfully. Check console for payload.");
-  };
+  const activeSections = clientState?.activeSections || { about: true, services: true, projects: false, reviews: true };
+  const headers = clientState?.headers || { services: { main: 'Our Services' }, projects: { main: 'Projects' }, reviews: { main: 'Reviews' } };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 w-full overflow-x-hidden">
+      
+      {/* HEADER */}
       <header className={`sticky top-0 w-full z-50 backdrop-blur-lg border-b shadow-sm ${config.variables.emergencyMode ? 'bg-red-900/95 border-red-800' : 'bg-white/90 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -77,13 +86,17 @@ export default function IndustryMasterTemplate() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-12 space-y-16">
-        <section className="text-center max-w-3xl mx-auto space-y-6">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900">{config.name} Specialists.</h1>
+        
+        {/* HERO */}
+        <section className="text-center max-w-4xl mx-auto space-y-6">
+          <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-900">{clientState?.heroHeadline || `${config.name} Specialists.`}</h1>
+          <p className="text-lg text-slate-600">{clientState?.heroSubheadline || "Providing top-tier services tailored to your exact needs."}</p>
           {config.variables.guaranteeText && (
             <div className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full uppercase tracking-widest">✓ {config.variables.guaranteeText}</div>
           )}
         </section>
 
+        {/* DYNAMIC FEATURES ENGINE */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="space-y-12">
             {config.features.areaCalculator && (
@@ -108,19 +121,24 @@ export default function IndustryMasterTemplate() {
             {config.features.fileUpload && (
               <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
                 <h3 className="text-xl font-black mb-2">Upload Site Photos</h3>
-                <p className="text-sm text-slate-500 mb-6">Securely upload images of the damage or project site for accurate assessment.</p>
+                <p className="text-sm text-slate-500 mb-6">Securely upload images of the project site for an accurate assessment.</p>
                 <div 
                   onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                   onDragLeave={() => setIsDragging(false)}
-                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); console.log("Files dropped:", e.dataTransfer.files); }}
+                  onDrop={(e) => { e.preventDefault(); setIsDragging(false); }}
                   className={`w-full border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100'}`}
                 >
                   <span className="text-4xl mb-3">📸</span>
                   <span className="text-sm font-bold text-slate-700">Drag & Drop photos here</span>
                   <span className="text-xs text-slate-400 mt-1">or click to browse</span>
-                  <input type="file" multiple className="hidden" id="file-upload" />
-                  <label htmlFor="file-upload" className="mt-4 px-4 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg cursor-pointer hover:bg-slate-300 transition">Browse Files</label>
                 </div>
+              </div>
+            )}
+            
+            {!config.features.areaCalculator && !config.features.fileUpload && activeSections.about && (
+              <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
+                <h3 className="text-2xl font-black mb-4">{clientState?.aboutTitle || "About Us"}</h3>
+                <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{clientState?.aboutBody || "Write your about us description here."}</p>
               </div>
             )}
           </div>
@@ -131,16 +149,15 @@ export default function IndustryMasterTemplate() {
                 <div className="bg-slate-900 p-6 text-white">
                   <h3 className="text-xl font-black">Schedule Your Appointment</h3>
                 </div>
-                
                 {config.variables.useExternalEmbed ? (
                   <div className="w-full h-[500px]">
-                    <iframe src={config.variables.externalEmbedUrl} width="100%" height="100%" frameBorder="0" title="External Booking Widget" className="w-full h-full"></iframe>
+                    <iframe src={config.variables.externalEmbedUrl} width="100%" height="100%" frameBorder="0" title="Booking" className="w-full h-full"></iframe>
                   </div>
                 ) : (
-                  <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
+                  <div className="p-6 space-y-6">
                     {wizardStep === 1 && (
-                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                        <label className="text-sm font-bold text-slate-700">Select Service Tier</label>
+                      <div className="space-y-4 animate-in fade-in">
+                        <label className="text-sm font-bold text-slate-700">Select Service</label>
                         <div className="grid grid-cols-1 gap-3">
                           {config.variables.services?.map((svc: string) => (
                             <label key={svc} className="flex items-center p-4 border border-slate-200 rounded-xl cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
@@ -153,64 +170,70 @@ export default function IndustryMasterTemplate() {
                       </div>
                     )}
                     {wizardStep === 2 && (
-                      <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                      <div className="space-y-4 animate-in fade-in">
                         <label className="text-sm font-bold text-slate-700">Select Available Slot</label>
                         <div className="grid grid-cols-3 gap-3">
-                          {['09:00 AM', '11:30 AM', '02:00 PM', '04:15 PM'].map(time => (
-                            <button key={time} type="button" className="py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:border-blue-500 hover:bg-blue-50 transition">{time}</button>
+                          {['09:00 AM', '11:30 AM', '02:00 PM'].map(time => (
+                            <button key={time} type="button" className="py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:border-blue-500 transition">{time}</button>
                           ))}
                         </div>
                         <div className="flex gap-3 mt-4">
                           <button type="button" onClick={() => setWizardStep(1)} className="px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl">&larr; Back</button>
-                          <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition">Confirm Booking</button>
+                          <button type="button" className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl">Confirm Booking</button>
                         </div>
                       </div>
                     )}
-                  </form>
+                  </div>
                 )}
               </div>
             )}
           </div>
         </div>
 
+        {/* SERVICES SECTION */}
+        {activeSections.services && clientState?.servicesList?.length > 0 && (
+          <section className="pt-8 border-t border-slate-200">
+            <h3 className="text-3xl font-black text-center mb-10">{headers.services.main}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {clientState.servicesList.map((svc: any) => (
+                <div key={svc.id} className="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100">
+                  {svc.image && <img src={svc.image} className="w-full h-40 object-cover rounded-xl mb-4" />}
+                  <h4 className="text-lg font-bold mb-2">{svc.title}</h4>
+                  <p className="text-slate-600 text-sm">{svc.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* BEFORE & AFTER SLIDER */}
         {config.features.beforeAfterSlider && (
           <section className="py-12 border-t border-slate-200">
             <h3 className="text-2xl font-black text-center mb-8">Our Transformative Results</h3>
             <div className="max-w-4xl mx-auto relative h-[400px] rounded-2xl overflow-hidden shadow-2xl cursor-ew-resize group">
               <div className="absolute inset-0 bg-slate-800 bg-[url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&q=80')] bg-cover bg-center"></div>
-              <div 
-                className="absolute inset-0 bg-slate-600 bg-[url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1200&q=80')] bg-cover bg-center"
-                style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
-              ></div>
+              <div className="absolute inset-0 bg-slate-600 bg-[url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=1200&q=80')] bg-cover bg-center" style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}></div>
               <input type="range" min="0" max="100" value={sliderPos} onChange={(e) => setSliderPos(Number(e.target.value))} className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20" />
               <div className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] z-10 pointer-events-none" style={{ left: `${sliderPos}%` }}>
-                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-slate-900 text-xs font-black">&lt;&gt;</span>
-                </div>
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"><span className="text-slate-900 text-xs font-black">&lt;&gt;</span></div>
               </div>
             </div>
           </section>
         )}
       </main>
-
+      
+      {/* FOOTER */}
       <footer className="bg-slate-900 text-slate-400 py-16 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="space-y-4">
             <div className="font-black text-white text-xl">{businessName}</div>
-            <p className="text-sm">Delivering uncompromising quality strictly adhering to Australian compliance and safety standards.</p>
-            <div className="flex gap-4 pt-2">
-              {socials.facebook && <a href={socials.facebook} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-500 transition">Facebook</a>}
-              {socials.instagram && <a href={socials.instagram} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-pink-500 transition">Instagram</a>}
-              {socials.tiktok && <a href={socials.tiktok} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition">TikTok</a>}
-            </div>
+            <p className="text-sm">Delivering uncompromising quality strictly adhering to compliance and safety standards.</p>
           </div>
           <div className="space-y-4">
             <h4 className="text-white font-bold uppercase tracking-widest text-xs">Trust & Compliance</h4>
             <ul className="space-y-2 text-sm">
               {config.variables.trustMarkers?.map((marker: string) => (
-                <li key={marker} className="flex items-center gap-2">
-                  <span className="text-emerald-500">✓</span> {marker}
-                </li>
+                <li key={marker} className="flex items-center gap-2"><span className="text-emerald-500">✓</span> {marker}</li>
               ))}
             </ul>
           </div>
@@ -220,13 +243,10 @@ export default function IndustryMasterTemplate() {
               {hours && hours.length > 0 ? (
                 hours.map((hr: any) => (
                   <li key={hr.id} className="flex justify-between border-b border-slate-800 pb-1">
-                    <span className="font-medium text-slate-300">{hr.days}</span>
-                    <span className="text-slate-500">{hr.hours}</span>
+                    <span className="font-medium text-slate-300">{hr.days}</span><span className="text-slate-500">{hr.hours}</span>
                   </li>
                 ))
-              ) : (
-                <li className="text-slate-500 italic">Contact us for operating hours.</li>
-              )}
+              ) : (<li className="text-slate-500 italic">Contact us for operating hours.</li>)}
             </ul>
           </div>
         </div>
