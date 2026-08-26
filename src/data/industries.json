@@ -52,3 +52,20 @@
     }
   }
 }
+"dentist": {
+    "name": "Premium Dental Clinic",
+    "themeGroup": "booking",
+    "features": {
+      "fileUpload": false,
+      "bookingCalendar": true,
+      "areaCalculator": false,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Book an Appointment",
+      "emergencyMode": false,
+      "useExternalEmbed": false,
+      "trustMarkers": ["ADA Member", "HICAPS Available", "Child Dental Benefits Schedule"],
+      "services": ["General Check-up & Clean", "Cosmetic Consultation", "Emergency Pain Relief", "Invisalign Assessment"]
+    }
+  }
