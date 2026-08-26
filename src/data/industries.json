@@ -50,9 +50,42 @@
       "baseRate": 85,
       "calcUnit": "Square Meters (m²)"
     }
-  }
-}
-"dentist": {
+  },
+  "smash-repairs": {
+    "name": "Premium Smash Repairs",
+    "themeGroup": "urgent",
+    "features": {
+      "fileUpload": true,
+      "bookingCalendar": true,
+      "areaCalculator": false,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Request Assessment",
+      "emergencyMode": false,
+      "guaranteeText": "Lifetime Workmanship Guarantee",
+      "trustMarkers": ["VACC Accredited", "Insurance Approved", "Courtesy Cars"],
+      "baseRate": 0
+    }
+  },
+  "custom-home-builders": {
+    "name": "Custom Home Builders",
+    "themeGroup": "calculator",
+    "features": {
+      "fileUpload": false,
+      "bookingCalendar": true,
+      "areaCalculator": true,
+      "beforeAfterSlider": true
+    },
+    "variables": {
+      "ctaLabel": "Start Your Project",
+      "emergencyMode": false,
+      "trustMarkers": ["HIA Member", "Award Winning", "Fixed Price Contracts"],
+      "baseRate": 1800,
+      "calcUnit": "Square Meters (m²)"
+    }
+  },
+  "dentist": {
     "name": "Premium Dental Clinic",
     "themeGroup": "booking",
     "features": {
@@ -69,3 +102,4 @@
       "services": ["General Check-up & Clean", "Cosmetic Consultation", "Emergency Pain Relief", "Invisalign Assessment"]
     }
   }
+}
