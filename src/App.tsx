@@ -1059,7 +1059,13 @@ function AdminWorkspace() {
         </div>
       )}
     </div>
+  export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AdminWorkspace />} />
+        <Route path="/:industrySlug" element={<IndustryMasterTemplate />} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;
