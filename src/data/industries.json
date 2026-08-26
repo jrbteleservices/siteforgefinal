@@ -2,104 +2,43 @@
   "emergency-plumber": {
     "name": "24/7 Emergency Plumbing",
     "themeGroup": "urgent",
-    "features": {
-      "fileUpload": true,
-      "bookingCalendar": false,
-      "areaCalculator": false,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Dispatch Plumber Now",
-      "emergencyMode": true,
-      "guaranteeText": "60-Minute Response Time Guarantee",
-      "trustMarkers": ["Master Plumbers Assoc.", "Fully Licensed & Insured", "ABN Verified"],
-      "baseRate": 150
-    }
-  },
-  "aesthetic-clinic": {
-    "name": "Cosmetic & Aesthetic Clinic",
-    "themeGroup": "booking",
-    "features": {
-      "fileUpload": false,
-      "bookingCalendar": true,
-      "areaCalculator": false,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Book Consultation",
-      "emergencyMode": false,
-      "useExternalEmbed": true,
-      "externalEmbedUrl": "https://calendly.com/your-clinic-link",
-      "trustMarkers": ["AHPRA Registered", "Medical Board Certified", "Afterpay Available"],
-      "services": ["Anti-Wrinkle", "Dermal Fillers", "Skin Needling"]
-    }
-  },
-  "commercial-concreters": {
-    "name": "Commercial Concreting",
-    "themeGroup": "calculator",
-    "features": {
-      "fileUpload": true,
-      "bookingCalendar": false,
-      "areaCalculator": true,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Get Instant Estimate",
-      "emergencyMode": false,
-      "trustMarkers": ["Master Builders Australia", "Commercial Compliant", "SafeWork Certified"],
-      "baseRate": 85,
-      "calcUnit": "Square Meters (m²)"
-    }
-  },
-  "smash-repairs": {
-    "name": "Premium Smash Repairs",
-    "themeGroup": "urgent",
-    "features": {
-      "fileUpload": true,
-      "bookingCalendar": true,
-      "areaCalculator": false,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Request Assessment",
-      "emergencyMode": false,
-      "guaranteeText": "Lifetime Workmanship Guarantee",
-      "trustMarkers": ["VACC Accredited", "Insurance Approved", "Courtesy Cars"],
-      "baseRate": 0
-    }
-  },
-  "custom-home-builders": {
-    "name": "Custom Home Builders",
-    "themeGroup": "calculator",
-    "features": {
-      "fileUpload": false,
-      "bookingCalendar": true,
-      "areaCalculator": true,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Start Your Project",
-      "emergencyMode": false,
-      "trustMarkers": ["HIA Member", "Award Winning", "Fixed Price Contracts"],
-      "baseRate": 1800,
-      "calcUnit": "Square Meters (m²)"
-    }
+    "defaultTool": "booking",
+    "features": { "fileUpload": true, "bookingCalendar": true, "areaCalculator": false, "beforeAfterSlider": true, "equipmentChecker": false, "productConfigurator": false },
+    "variables": { "ctaLabel": "Dispatch Plumber Now", "emergencyMode": true, "guaranteeText": "60-Minute Response Time Guarantee", "trustMarkers": ["Master Plumbers Assoc.", "Fully Licensed & Insured", "ABN Verified"], "baseRate": 150 }
   },
   "dentist": {
     "name": "Premium Dental Clinic",
     "themeGroup": "booking",
-    "features": {
-      "fileUpload": false,
-      "bookingCalendar": true,
-      "areaCalculator": false,
-      "beforeAfterSlider": true
-    },
-    "variables": {
-      "ctaLabel": "Book an Appointment",
-      "emergencyMode": false,
-      "useExternalEmbed": false,
-      "trustMarkers": ["ADA Member", "HICAPS Available", "Child Dental Benefits Schedule"],
-      "services": ["General Check-up & Clean", "Cosmetic Consultation", "Emergency Pain Relief", "Invisalign Assessment"]
-    }
+    "defaultTool": "booking",
+    "features": { "fileUpload": false, "bookingCalendar": true, "areaCalculator": false, "beforeAfterSlider": true, "equipmentChecker": false, "productConfigurator": false },
+    "variables": { "ctaLabel": "Book an Appointment", "emergencyMode": false, "trustMarkers": ["ADA Member", "HICAPS Available", "Child Dental Benefits Schedule"], "services": ["General Check-up & Clean", "Cosmetic Consultation", "Emergency Pain Relief", "Invisalign Assessment"] }
+  },
+  "epoxy-flooring": {
+    "name": "Epoxy & Timber Flooring",
+    "themeGroup": "calculator",
+    "defaultTool": "estimator",
+    "features": { "fileUpload": true, "bookingCalendar": false, "areaCalculator": true, "beforeAfterSlider": true, "equipmentChecker": false, "productConfigurator": true },
+    "variables": { "ctaLabel": "Get Instant Quote", "emergencyMode": false, "trustMarkers": ["QBCC Licensed", "10-Year Structural Warranty", "Commercial Grade Resins"], "baseRate": 65, "calcUnit": "Square Meters (m²)" }
+  },
+  "crane-hire": {
+    "name": "Heavy Crane & Rigging Hire",
+    "themeGroup": "fleet",
+    "defaultTool": "equipmentChecker",
+    "features": { "fileUpload": true, "bookingCalendar": true, "areaCalculator": false, "beforeAfterSlider": false, "equipmentChecker": true, "productConfigurator": false },
+    "variables": { "ctaLabel": "Check Fleet Availability", "emergencyMode": false, "trustMarkers": ["CICA Member", "Fully Crane Certified", "$20M Public Liability"], "services": ["All-Terrain Cranes (50t - 250t)", "Franna Cranes", "Rigging & Heavy Haulage"] }
+  },
+  "sound-engineer": {
+    "name": "Audio Engineering & Studio",
+    "themeGroup": "creative",
+    "defaultTool": "booking",
+    "features": { "fileUpload": true, "bookingCalendar": true, "areaCalculator": false, "beforeAfterSlider": false, "equipmentChecker": false, "productConfigurator": false },
+    "variables": { "ctaLabel": "Book Session", "emergencyMode": false, "trustMarkers": ["Dolby Atmos Certified", "SSL Console Suite", "Grammy-Winning Credits"], "services": ["Mixing & Mastering", "Vocal Production", "Live Sound Reinforcement"] }
+  },
+  "cnc-machining": {
+    "name": "CNC Machining & Fabrication",
+    "themeGroup": "manufacturing",
+    "defaultTool": "documentVault",
+    "features": { "fileUpload": true, "bookingCalendar": true, "areaCalculator": false, "beforeAfterSlider": false, "equipmentChecker": false, "productConfigurator": true },
+    "variables": { "ctaLabel": "Submit CAD for RFQ", "emergencyMode": false, "trustMarkers": ["ISO 9001 Certified", "ITAR Compliant", "Sub-micron Precision"], "services": ["5-Axis CNC Milling", "Precision Turning", "Rapid Prototyping"] }
   }
 }
